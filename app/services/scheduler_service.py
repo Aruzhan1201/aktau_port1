@@ -15,24 +15,33 @@ scheduler = AsyncIOScheduler()
 
 
 async def release_expired_reservations():
-    async with async_session_factory() as session:
-        result = await session.execute(
-            select(BerthReservation).where(
-                BerthReservation.status == ReservationStatus.active,
-                BerthReservation.departure_time.isnot(None),
+    try:
+        async with async_session_factory() as session:
+            result = await session.execute(
+                select(BerthReservation).where(
+                    BerthReservation.status == ReservationStatus.active,
+                )
             )
-        )
-        reservations = list(result.scalars().all())
-        now = datetime.now(timezone.utc)
-        for res in reservations:
-            if res.departure_time and res.departure_time <= now:
-                res.status = ReservationStatus.completed
-                berth = await session.get(Berth, res.berth_id)
-                if berth:
-                    berth.status = BerthStatus.free
-        await session.commit()
-        if reservations:
-            logger.info("Released %d expired reservations", len(reservations))
+            reservations = list(result.scalars().all())
+            now = datetime.now(timezone.utc)
+            released = 0
+            for res in reservations:
+                expired = res.departure_time is not None and res.departure_time <= now
+                no_show = (
+                    res.departure_time is None
+                    and res.arrival_time <= now
+                )
+                if expired or no_show:
+                    res.status = ReservationStatus.completed
+                    berth = await session.get(Berth, res.berth_id)
+                    if berth:
+                        berth.status = BerthStatus.free
+                    released += 1
+            await session.commit()
+            if released:
+                logger.info("Released %d expired reservations", released)
+    except Exception as e:
+        logger.error("Failed to release expired reservations: %s", e)
 
 
 def start_scheduler():

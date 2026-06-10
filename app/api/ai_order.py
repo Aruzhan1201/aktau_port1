@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.deps import RoleChecker
+from app.models.cargo import CargoStatus
 from app.models.user import User, UserRole
 from app.schemas.cargo import AIOrderInput, AIOrderOutput
 from app.services import cargo_service
@@ -36,7 +37,7 @@ async def ai_order(
         await cargo_service.update_cargo_status(
             session=session,
             cargo_id=cargo.id,
-            new_status="approved",
+            new_status=CargoStatus.approved,
             changed_by=current_user.id,
             notes="Auto-approved by AI (high confidence)",
         )

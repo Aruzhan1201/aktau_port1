@@ -58,6 +58,7 @@ async def verify_document(
             cargo.is_flagged = True
             cargo.flag_reason = flagged_reason or "Suspicious document"
 
+    await session.flush()
     return doc
 
 

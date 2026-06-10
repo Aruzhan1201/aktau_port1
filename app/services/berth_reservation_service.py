@@ -127,4 +127,5 @@ async def cancel_reservation(
     if berth:
         berth.status = BerthStatus.free
 
+    await session.flush()
     return reservation

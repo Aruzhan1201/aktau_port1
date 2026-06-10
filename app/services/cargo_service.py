@@ -101,6 +101,7 @@ async def delete_cargo(session: AsyncSession, cargo_id: int, changed_by: int) ->
     cargo.status = CargoStatus.cancelled
     cargo.updated_at = datetime.now(timezone.utc)
     await _log_status(session, cargo_id, old_status, CargoStatus.cancelled, changed_by, "Cancelled")
+    await session.flush()
     return cargo
 
 
@@ -116,6 +117,18 @@ def _calculate_priority(eta: datetime | None, cargo_type: str) -> float:
     return score
 
 
+_ALLOWED_TRANSITIONS: dict[CargoStatus, set[CargoStatus]] = {
+    CargoStatus.created: {CargoStatus.approved, CargoStatus.cancelled},
+    CargoStatus.approved: {CargoStatus.assigned, CargoStatus.cancelled},
+    CargoStatus.assigned: {CargoStatus.loading, CargoStatus.cancelled},
+    CargoStatus.loading: {CargoStatus.in_transit, CargoStatus.cancelled},
+    CargoStatus.in_transit: {CargoStatus.arrived, CargoStatus.cancelled},
+    CargoStatus.arrived: {CargoStatus.delivered},
+    CargoStatus.delivered: set(),
+    CargoStatus.cancelled: set(),
+}
+
+
 async def update_cargo_status(
     session: AsyncSession,
     cargo_id: int,
@@ -126,6 +139,12 @@ async def update_cargo_status(
     cargo = await get_cargo(session, cargo_id)
     if not cargo:
         return None
+
+    allowed = _ALLOWED_TRANSITIONS.get(cargo.status, set())
+    if new_status not in allowed:
+        raise ValueError(
+            f"Cannot transition from {cargo.status.value} to {new_status.value}"
+        )
 
     payment_blocked_statuses = {CargoStatus.arrived, CargoStatus.delivered}
     if new_status in payment_blocked_statuses:
@@ -138,6 +157,7 @@ async def update_cargo_status(
 
     await _log_status(session, cargo_id, old_status, new_status, changed_by, notes)
     await _handle_status_side_effects(session, cargo, old_status, new_status, changed_by)
+    await session.flush()
     return cargo
 
 
@@ -225,5 +245,6 @@ async def assign_ship_to_cargo(
 
     cargo.ship_id = ship_id
     ship.status = ShipStatus.berthed
+    await session.flush()
     await update_cargo_status(session, cargo_id, CargoStatus.assigned, changed_by)
     return cargo

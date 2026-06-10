@@ -24,30 +24,34 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
 
     from app.telegram.bot import _bot
 
-    if text.startswith("/start"):
+    async def _safe_send(chat_id: int, text: str):
         if _bot:
-            await _bot.send_message(
-                chat_id=chat_id,
-                text="Welcome to Aktau Port Logistics Bot!\n\n"
-                "You will receive notifications about your cargo, berth reservations, and payments.\n"
-                "Use /help for available commands.",
-            )
+            try:
+                await _bot.send_message(chat_id=chat_id, text=text)
+            except Exception as e:
+                logger.warning("Telegram send_message failed: %s", e)
+
+    if text.startswith("/start"):
+        await _safe_send(
+            chat_id,
+            "Welcome to Aktau Port Logistics Bot!\n\n"
+            "You will receive notifications about your cargo, berth reservations, and payments.\n"
+            "Use /help for available commands.",
+        )
 
     elif text.startswith("/help"):
-        if _bot:
-            await _bot.send_message(
-                chat_id=chat_id,
-                text="Available commands:\n"
-                "/start - Register for notifications\n"
-                "/help - Show this message\n"
-                "/status <cargo_id> - Check cargo status",
-            )
+        await _safe_send(
+            chat_id,
+            "Available commands:\n"
+            "/start - Register for notifications\n"
+            "/help - Show this message\n"
+            "/status <cargo_id> - Check cargo status",
+        )
 
     elif text.startswith("/status"):
         parts = text.split()
         if len(parts) < 2:
-            if _bot:
-                await _bot.send_message(chat_id=chat_id, text="Usage: /status <cargo_id>")
+            await _safe_send(chat_id, "Usage: /status <cargo_id>")
             return {"ok": True}
 
         cargo_id = parts[1]
@@ -57,18 +61,15 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
             )
             cargo = result.scalar_one_or_none()
             if cargo:
-                if _bot:
-                    await _bot.send_message(
-                        chat_id=chat_id,
-                        text=f"Cargo #{cargo.id}\nType: {cargo.cargo_type}\nWeight: {cargo.weight}t\n"
-                        f"From: {cargo.origin} -> {cargo.destination}\nStatus: {cargo.status.value}\n"
-                        f"ETA: {cargo.eta.isoformat() if cargo.eta else 'N/A'}",
-                    )
+                await _safe_send(
+                    chat_id,
+                    f"Cargo #{cargo.id}\nType: {cargo.cargo_type}\nWeight: {cargo.weight}t\n"
+                    f"From: {cargo.origin} -> {cargo.destination}\nStatus: {cargo.status.value}\n"
+                    f"ETA: {cargo.eta.isoformat() if cargo.eta else 'N/A'}",
+                )
             else:
-                if _bot:
-                    await _bot.send_message(chat_id=chat_id, text="Cargo not found.")
+                await _safe_send(chat_id, "Cargo not found.")
         except Exception as e:
-            if _bot:
-                await _bot.send_message(chat_id=chat_id, text=f"Error: {str(e)}")
+            await _safe_send(chat_id, f"Error: {str(e)}")
 
     return {"ok": True}

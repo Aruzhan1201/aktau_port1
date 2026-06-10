@@ -29,6 +29,7 @@ async def get_queue(
 
     if status:
         query = query.where(PortQueue.status == status)
+        count_all = count_all.where(PortQueue.status == status)
 
     total = (await session.execute(count_all)).scalar() or 0
     waiting = (await session.execute(count_waiting)).scalar() or 0
@@ -81,6 +82,7 @@ async def process_next(session: AsyncSession) -> dict | None:
     )
     cargo = cargo_result.scalar_one_or_none()
 
+    await session.flush()
     return {
         "queue_id": entry.id,
         "cargo_id": entry.cargo_id,

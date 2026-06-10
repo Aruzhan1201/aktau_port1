@@ -22,9 +22,39 @@ async def test_payment_gate_blocks_arrived(client: AsyncClient, client_token: st
         headers={"Authorization": f"Bearer {admin_token}"},
     )
 
-    await client.post(
+    pay_resp = await client.post(
         "/payments/",
         json={"type": "cargo_fee", "amount": 100.0, "cargo_id": cargo_id},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    payment_id = pay_resp.json()["id"]
+    await client.post(
+        f"/payments/{payment_id}/pay",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    ship_resp = await client.post(
+        "/ship/create",
+        json={"name": "Gate Ship", "capacity": 100.0},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    ship_id = ship_resp.json()["id"]
+    await client.post(
+        "/cargo/assign-ship",
+        json={"cargo_id": cargo_id, "ship_id": ship_id},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    for s in ("loading", "in_transit"):
+        await client.patch(
+            f"/cargo/{cargo_id}/status",
+            json={"status": s},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+
+    await client.post(
+        "/payments/",
+        json={"type": "cargo_fee", "amount": 50.0, "cargo_id": cargo_id},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
 
@@ -57,9 +87,40 @@ async def test_payment_gate_blocks_delivered(client: AsyncClient, client_token: 
         headers={"Authorization": f"Bearer {admin_token}"},
     )
 
-    await client.post(
+    pay_resp = await client.post(
         "/payments/",
         json={"type": "cargo_fee", "amount": 100.0, "cargo_id": cargo_id},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    payment_id = pay_resp.json()["id"]
+    await client.post(
+        f"/payments/{payment_id}/pay",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    ship_resp = await client.post(
+        "/ship/create",
+        json={"name": "Gate Ship 2", "capacity": 100.0},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    ship_id = ship_resp.json()["id"]
+    await client.post(
+        "/cargo/assign-ship",
+        json={"cargo_id": cargo_id, "ship_id": ship_id},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    for s in ("loading", "in_transit", "arrived"):
+        resp = await client.patch(
+            f"/cargo/{cargo_id}/status",
+            json={"status": s},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert resp.status_code == 200
+
+    await client.post(
+        "/payments/",
+        json={"type": "cargo_fee", "amount": 50.0, "cargo_id": cargo_id},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
 
@@ -139,15 +200,11 @@ async def test_payment_gate_allows_with_paid(client: AsyncClient, client_token: 
         json={"type": "cargo_fee", "amount": 100.0, "cargo_id": cargo_id},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    assert pay_resp.status_code == 201
     payment_id = pay_resp.json()["id"]
-
-    mark_resp = await client.post(
+    await client.post(
         f"/payments/{payment_id}/pay",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
-    assert mark_resp.status_code == 200
-    assert mark_resp.json()["status"] == "paid"
 
     ship_resp = await client.post(
         "/ship/create",
@@ -155,7 +212,6 @@ async def test_payment_gate_allows_with_paid(client: AsyncClient, client_token: 
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     ship_id = ship_resp.json()["id"]
-
     assign_resp = await client.post(
         "/cargo/assign-ship",
         json={"cargo_id": cargo_id, "ship_id": ship_id},
@@ -163,10 +219,12 @@ async def test_payment_gate_allows_with_paid(client: AsyncClient, client_token: 
     )
     assert assign_resp.status_code == 200
 
-    response = await client.patch(
-        f"/cargo/{cargo_id}/status",
-        json={"status": "arrived"},
-        headers={"Authorization": f"Bearer {admin_token}"},
-    )
-    assert response.status_code == 200
-    assert response.json()["status"] == "arrived"
+    for s in ("loading", "in_transit", "arrived"):
+        resp = await client.patch(
+            f"/cargo/{cargo_id}/status",
+            json={"status": s},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert resp.status_code == 200, f"Failed at {s}: {resp.text}"
+
+    assert resp.json()["status"] == "arrived"

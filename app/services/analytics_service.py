@@ -15,13 +15,12 @@ from app.services.port_queue_service import calculate_average_waiting_time
 from app.services.payment_service import get_revenue
 
 
-def _make_cache_key(prefix: str, session: AsyncSession) -> str:
-    raw = f"{prefix}:{id(session)}"
-    return f"analytics:{hashlib.md5(raw.encode()).hexdigest()}"
+def _make_cache_key(prefix: str) -> str:
+    return f"analytics:{prefix}"
 
 
 async def get_dashboard(session: AsyncSession) -> dict:
-    cache_key = _make_cache_key("dashboard", session)
+    cache_key = _make_cache_key("dashboard")
     cached = await cache_get(cache_key)
     if cached is not None:
         return cached
@@ -36,7 +35,7 @@ async def get_dashboard(session: AsyncSession) -> dict:
         session,
         select(func.count(Berth.id)).where(Berth.status == BerthStatus.free),
     )
-    total_berths = occupied + free
+    total_berths = await _count(session, select(func.count(Berth.id)))
     berth_util = round((occupied / total_berths * 100), 1) if total_berths > 0 else 0
 
     avg_wait = await calculate_average_waiting_time(session)

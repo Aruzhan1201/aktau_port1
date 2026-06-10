@@ -1,3 +1,5 @@
+import time
+
 import pytest
 from httpx import AsyncClient
 
@@ -59,27 +61,30 @@ async def test_cargo_access_denied(client: AsyncClient, client_token: str, admin
     )
     cargo_id = create_resp.json()["id"]
 
-    other_user_token = None
+    unique_email = f"other_{time.time()}@test.com"
     reg_resp = await client.post(
         "/auth/register",
         json={
             "name": "Other Client",
-            "email": "other@test.com",
+            "email": unique_email,
             "password": "pass123",
             "role": "client",
         },
     )
-    if reg_resp.status_code == 201:
-        login_resp = await client.post(
-            "/auth/login",
-            json={"email": "other@test.com", "password": "pass123"},
-        )
-        other_user_token = login_resp.json()["access_token"]
-        response = await client.get(
-            f"/cargo/{cargo_id}",
-            headers={"Authorization": f"Bearer {other_user_token}"},
-        )
-        assert response.status_code == 403
+    assert reg_resp.status_code == 201
+
+    login_resp = await client.post(
+        "/auth/login",
+        json={"email": unique_email, "password": "pass123"},
+    )
+    assert login_resp.status_code == 200
+    other_user_token = login_resp.json()["access_token"]
+
+    response = await client.get(
+        f"/cargo/{cargo_id}",
+        headers={"Authorization": f"Bearer {other_user_token}"},
+    )
+    assert response.status_code == 403
 
 
 @pytest.mark.asyncio

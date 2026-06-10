@@ -184,4 +184,5 @@ async def release_berth(
         res.status = ReservationStatus.completed
         res.departure_time = datetime.now(timezone.utc)
 
+    await session.flush()
     return berth

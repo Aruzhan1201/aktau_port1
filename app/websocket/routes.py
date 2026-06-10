@@ -3,7 +3,9 @@ import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 
+from app.core.database import async_session_factory
 from app.core.security import decode_access_token
+from app.services import ship_service
 from app.websocket.manager import manager
 
 logger = logging.getLogger(__name__)
@@ -43,32 +45,99 @@ async def websocket_endpoint(websocket: WebSocket):
                 lat = data.get("lat")
                 lng = data.get("lng")
                 if ship_id and lat is not None and lng is not None:
-                    await manager.broadcast_ship_update(
-                        ship_id,
-                        {
-                            "type": "location_updated",
-                            "ship_id": ship_id,
-                            "lat": lat,
-                            "lng": lng,
-                        },
-                    )
+                    async with async_session_factory() as ws_session:
+                        updated = await ship_service.update_ship_location(
+                            ws_session, ship_id, lat, lng
+                        )
+                        if updated:
+                            await ws_session.commit()
+                            await manager.broadcast_ship_update(
+                                ship_id,
+                                {
+                                    "type": "location_updated",
+                                    "ship_id": ship_id,
+                                    "lat": lat,
+                                    "lng": lng,
+                                },
+                            )
+                    if not updated:
+                        await manager.send_personal(
+                            user_id,
+                            {"type": "error", "message": f"Ship {ship_id} not found"},
+                        )
 
             elif msg_type == "subscribe_ship":
                 ship_id = data.get("ship_id")
                 if ship_id:
-                    manager.subscribe_ship(user_id, ship_id)
-                    await manager.send_personal(
-                        user_id,
-                        {"type": "subscribed", "entity": "ship", "id": ship_id},
-                    )
+                    async with async_session_factory() as ws_session:
+                        ship = await ship_service.get_ship(ws_session, ship_id)
+                        if ship:
+                            await manager.subscribe_ship(user_id, ship_id)
+                            await manager.send_personal(
+                                user_id,
+                                {"type": "subscribed", "entity": "ship", "id": ship_id},
+                            )
+                        else:
+                            await manager.send_personal(
+                                user_id,
+                                {"type": "error", "message": f"Ship {ship_id} not found"},
+                            )
 
             elif msg_type == "subscribe_cargo":
                 cargo_id = data.get("cargo_id")
                 if cargo_id:
-                    manager.subscribe_cargo(user_id, cargo_id)
+                    async with async_session_factory() as ws_session:
+                        from app.services import cargo_service
+                        cargo = await cargo_service.get_cargo(ws_session, cargo_id)
+                        if cargo:
+                            await manager.subscribe_cargo(user_id, cargo_id)
+                            await manager.send_personal(
+                                user_id,
+                                {"type": "subscribed", "entity": "cargo", "id": cargo_id},
+                            )
+                        else:
+                            await manager.send_personal(
+                                user_id,
+                                {"type": "error", "message": f"Cargo {cargo_id} not found"},
+                            )
+
+            elif msg_type == "chat_message":
+                to_user_id = data.get("to_user_id")
+                text = data.get("text", "")
+                deal_id = data.get("deal_id")
+                if to_user_id and text:
+                    chat_payload = {
+                        "type": "chat_message",
+                        "from_user_id": user_id,
+                        "text": text,
+                        "deal_id": deal_id,
+                        "timestamp": data.get("timestamp", ""),
+                    }
+                    await manager.send_personal(to_user_id, chat_payload)
+                    await manager.send_personal(
+                        user_id, {**chat_payload, "status": "delivered"}
+                    )
+                else:
                     await manager.send_personal(
                         user_id,
-                        {"type": "subscribed", "entity": "cargo", "id": cargo_id},
+                        {"type": "error", "message": "chat_message requires to_user_id and text"},
+                    )
+
+            elif msg_type == "deal_update":
+                deal_id = data.get("deal_id")
+                action = data.get("action")
+                to_user_id = data.get("to_user_id")
+                payload = data.get("payload", {})
+                if deal_id and to_user_id:
+                    await manager.send_personal(
+                        to_user_id,
+                        {
+                            "type": "deal_update",
+                            "deal_id": deal_id,
+                            "action": action,
+                            "payload": payload,
+                            "from_user_id": user_id,
+                        },
                     )
 
             else:
