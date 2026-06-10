@@ -32,3 +32,25 @@ async def get_company(session: AsyncSession, company_id: int) -> Company | None:
 async def list_companies(session: AsyncSession) -> list[Company]:
     result = await session.execute(select(Company).order_by(Company.name))
     return list(result.scalars().all())
+
+
+async def update_company(
+    session: AsyncSession, company_id: int, data: dict
+) -> Company | None:
+    company = await get_company(session, company_id)
+    if not company:
+        return None
+    for key, value in data.items():
+        if value is not None and hasattr(company, key):
+            setattr(company, key, value)
+    await session.flush()
+    return company
+
+
+async def delete_company(session: AsyncSession, company_id: int) -> Company | None:
+    company = await get_company(session, company_id)
+    if not company:
+        return None
+    await session.delete(company)
+    await session.flush()
+    return company

@@ -51,6 +51,19 @@ async def list_payments(
     return list(result.scalars().all()), total
 
 
+async def mark_payment_paid(
+    session: AsyncSession, payment_id: int
+) -> Payment | None:
+    result = await session.execute(select(Payment).where(Payment.id == payment_id))
+    payment = result.scalar_one_or_none()
+    if not payment:
+        return None
+    payment.status = PaymentStatus.paid
+    payment.paid_at = datetime.now(timezone.utc)
+    await session.flush()
+    return payment
+
+
 async def get_revenue(session: AsyncSession) -> dict:
     cargo_fees = await _sum_by_type(session, PaymentType.cargo_fee, PaymentStatus.paid)
     berth_fees = await _sum_by_type(session, PaymentType.berth_fee, PaymentStatus.paid)
@@ -66,6 +79,44 @@ async def get_revenue(session: AsyncSession) -> dict:
         "total_pending": total_pending,
         "total_paid": total_paid,
     }
+
+
+async def are_cargo_payments_paid(session: AsyncSession, cargo_id: int) -> bool:
+    total = await session.execute(
+        select(func.count(Payment.id)).where(Payment.cargo_id == cargo_id)
+    )
+    total_count = total.scalar() or 0
+    if total_count == 0:
+        return False
+    unpaid = await session.execute(
+        select(func.count(Payment.id)).where(
+            Payment.cargo_id == cargo_id,
+            Payment.status != PaymentStatus.paid,
+        )
+    )
+    unpaid_count = unpaid.scalar() or 0
+    return unpaid_count == 0
+
+
+async def are_reservation_payments_paid(
+    session: AsyncSession, reservation_id: int
+) -> bool:
+    total = await session.execute(
+        select(func.count(Payment.id)).where(
+            Payment.reservation_id == reservation_id
+        )
+    )
+    total_count = total.scalar() or 0
+    if total_count == 0:
+        return False
+    unpaid = await session.execute(
+        select(func.count(Payment.id)).where(
+            Payment.reservation_id == reservation_id,
+            Payment.status != PaymentStatus.paid,
+        )
+    )
+    unpaid_count = unpaid.scalar() or 0
+    return unpaid_count == 0
 
 
 async def _sum_by_type(

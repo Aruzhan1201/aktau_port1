@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Enum, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -15,10 +15,14 @@ class CargoStatus(str, enum.Enum):
     in_transit = "in_transit"
     arrived = "arrived"
     delivered = "delivered"
+    cancelled = "cancelled"
 
 
 class Cargo(Base):
     __tablename__ = "cargoes"
+    __table_args__ = (
+        CheckConstraint("weight > 0", name="ck_cargo_weight_positive"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     client_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)

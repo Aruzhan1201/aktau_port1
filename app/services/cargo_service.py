@@ -9,6 +9,8 @@ from app.models.notification import Notification, NotificationType
 from app.models.port_queue import PortQueue, QueueStatus
 from app.models.ship import Ship, ShipStatus
 
+from app.services.payment_service import are_cargo_payments_paid
+
 
 async def create_cargo(
     session: AsyncSession,
@@ -44,9 +46,7 @@ async def create_cargo(
 
 
 async def get_cargo(session: AsyncSession, cargo_id: int) -> Cargo | None:
-    result = await session.execute(
-        select(Cargo).where(Cargo.id == cargo_id)
-    )
+    result = await session.execute(select(Cargo).where(Cargo.id == cargo_id))
     return result.scalar_one_or_none()
 
 
@@ -79,6 +79,31 @@ async def list_cargoes(
     return items, total
 
 
+async def update_cargo(
+    session: AsyncSession, cargo_id: int, data: dict
+) -> Cargo | None:
+    cargo = await get_cargo(session, cargo_id)
+    if not cargo:
+        return None
+    for key, value in data.items():
+        if value is not None and hasattr(cargo, key):
+            setattr(cargo, key, value)
+    cargo.updated_at = datetime.now(timezone.utc)
+    await session.flush()
+    return cargo
+
+
+async def delete_cargo(session: AsyncSession, cargo_id: int, changed_by: int) -> Cargo | None:
+    cargo = await get_cargo(session, cargo_id)
+    if not cargo:
+        return None
+    old_status = cargo.status
+    cargo.status = CargoStatus.cancelled
+    cargo.updated_at = datetime.now(timezone.utc)
+    await _log_status(session, cargo_id, old_status, CargoStatus.cancelled, changed_by, "Cancelled")
+    return cargo
+
+
 def _calculate_priority(eta: datetime | None, cargo_type: str) -> float:
     score = 1.0
     if eta:
@@ -101,6 +126,11 @@ async def update_cargo_status(
     cargo = await get_cargo(session, cargo_id)
     if not cargo:
         return None
+
+    payment_blocked_statuses = {CargoStatus.arrived, CargoStatus.delivered}
+    if new_status in payment_blocked_statuses:
+        if not await are_cargo_payments_paid(session, cargo_id):
+            raise ValueError("Cannot proceed: cargo payments are not all paid")
 
     old_status = cargo.status
     cargo.status = new_status
@@ -189,6 +219,9 @@ async def assign_ship_to_cargo(
         raise ValueError("Ship not found")
     if ship.status != ShipStatus.available:
         raise ValueError("Ship is not available")
+
+    if not await are_cargo_payments_paid(session, cargo_id):
+        raise ValueError("Cannot assign ship: cargo payments are not all paid")
 
     cargo.ship_id = ship_id
     ship.status = ShipStatus.berthed

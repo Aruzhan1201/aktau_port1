@@ -11,6 +11,7 @@ from app.schemas.cargo import (
     CargoListResponse,
     CargoResponse,
     CargoStatusUpdate,
+    CargoUpdate,
 )
 from app.services import cargo_service
 
@@ -75,16 +76,54 @@ async def update_cargo_status(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.captain, UserRole.admin)),
 ):
-    cargo = await cargo_service.update_cargo_status(
-        session=session,
-        cargo_id=cargo_id,
-        new_status=body.status,
-        changed_by=current_user.id,
-        notes=body.notes,
-    )
-    if not cargo:
+    try:
+        cargo = await cargo_service.update_cargo_status(
+            session=session,
+            cargo_id=cargo_id,
+            new_status=body.status,
+            changed_by=current_user.id,
+            notes=body.notes,
+        )
+        if not cargo:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cargo not found")
+        return cargo
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.put("/{cargo_id}", response_model=CargoResponse)
+async def update_cargo(
+    cargo_id: int,
+    body: CargoUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(RoleChecker(UserRole.client, UserRole.admin)),
+):
+    if current_user.role == UserRole.client:
+        cargo = await cargo_service.get_cargo(session, cargo_id)
+        if not cargo or cargo.client_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cargo not found")
+    updated = await cargo_service.update_cargo(session, cargo_id, body.model_dump(exclude_unset=True))
+    if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cargo not found")
-    return cargo
+    if current_user.role == UserRole.client and updated.client_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your cargo")
+    return updated
+
+
+@router.delete("/{cargo_id}", response_model=CargoResponse)
+async def delete_cargo(
+    cargo_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(RoleChecker(UserRole.client, UserRole.admin)),
+):
+    if current_user.role == UserRole.client:
+        cargo = await cargo_service.get_cargo(session, cargo_id)
+        if not cargo or cargo.client_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cargo not found")
+    deleted = await cargo_service.delete_cargo(session, cargo_id, current_user.id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cargo not found")
+    return deleted
 
 
 @router.post("/assign-ship", response_model=CargoResponse)

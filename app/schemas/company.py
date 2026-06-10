@@ -11,6 +11,14 @@ class CompanyCreate(BaseModel):
     email: str | None = Field(None, max_length=255)
 
 
+class CompanyUpdate(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=255)
+    tax_id: str | None = Field(None, max_length=100)
+    address: str | None = Field(None, max_length=500)
+    phone: str | None = Field(None, max_length=50)
+    email: str | None = Field(None, max_length=255)
+
+
 class CompanyResponse(BaseModel):
     id: int
     name: str

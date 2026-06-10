@@ -10,7 +10,9 @@ from app.schemas.berth import (
     BerthListResponse,
     BerthReserveRequest,
     BerthResponse,
+    BerthUpdate,
     ReservationResponse,
+    ReservationUpdate,
 )
 from app.services import berth_service, berth_reservation_service
 
@@ -23,15 +25,20 @@ async def create_berth(
     session: AsyncSession = Depends(get_session),
     _: User = Depends(RoleChecker(UserRole.admin)),
 ):
-    berth = await berth_service.create_berth(
-        session=session,
-        name=body.name,
-        capacity=body.capacity,
-        manager_id=body.manager_id,
-        latitude=body.latitude,
-        longitude=body.longitude,
-    )
-    return berth
+    try:
+        berth = await berth_service.create_berth(
+            session=session,
+            name=body.name,
+            capacity=body.capacity,
+            manager_id=body.manager_id,
+            latitude=body.latitude,
+            longitude=body.longitude,
+        )
+        return berth
+    except Exception as e:
+        if "unique" in str(e).lower() or "IntegrityError" in str(e):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Berth name already exists")
+        raise
 
 
 @router.post("/reserve", response_model=ReservationResponse)
@@ -78,6 +85,73 @@ async def get_berth(
     if not berth:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Berth not found")
     return berth
+
+
+@router.put("/{berth_id}", response_model=BerthResponse)
+async def update_berth(
+    berth_id: int,
+    body: BerthUpdate,
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(RoleChecker(UserRole.admin)),
+):
+    updated = await berth_service.update_berth(session, berth_id, body.model_dump(exclude_unset=True))
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Berth not found")
+    return updated
+
+
+@router.delete("/{berth_id}", response_model=BerthResponse)
+async def delete_berth(
+    berth_id: int,
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(RoleChecker(UserRole.admin)),
+):
+    deleted = await berth_service.delete_berth(session, berth_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Berth not found")
+    return deleted
+
+
+@router.get("/reservation/{reservation_id}")
+async def get_reservation(
+    reservation_id: int,
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin)),
+):
+    reservation = await berth_reservation_service.get_reservation(session, reservation_id)
+    if not reservation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
+    return reservation
+
+
+@router.put("/reservation/{reservation_id}")
+async def update_reservation(
+    reservation_id: int,
+    body: ReservationUpdate,
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin)),
+):
+    try:
+        updated = await berth_reservation_service.update_reservation(
+            session, reservation_id, body.model_dump(exclude_unset=True)
+        )
+        if not updated:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
+        return updated
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.delete("/reservation/{reservation_id}")
+async def delete_reservation(
+    reservation_id: int,
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin)),
+):
+    deleted = await berth_reservation_service.cancel_reservation(session, reservation_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reservation not found")
+    return deleted
 
 
 @router.get("/{berth_id}/reservations")

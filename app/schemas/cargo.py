@@ -13,6 +13,14 @@ class CargoCreate(BaseModel):
     eta: datetime | None = None
 
 
+class CargoUpdate(BaseModel):
+    cargo_type: str | None = Field(None, max_length=100)
+    weight: float | None = Field(None, gt=0)
+    origin: str | None = Field(None, max_length=255)
+    destination: str | None = Field(None, max_length=255)
+    eta: datetime | None = None
+
+
 class CargoResponse(BaseModel):
     id: int
     client_id: int

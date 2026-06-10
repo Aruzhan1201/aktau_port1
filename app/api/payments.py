@@ -43,6 +43,18 @@ async def list_payments(
     return items
 
 
+@router.post("/{payment_id}/pay", response_model=PaymentResponse)
+async def mark_payment_paid(
+    payment_id: int,
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(RoleChecker(UserRole.admin)),
+):
+    payment = await payment_service.mark_payment_paid(session, payment_id)
+    if not payment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+    return payment
+
+
 @router.get("/revenue", response_model=RevenueResponse)
 async def get_revenue(
     session: AsyncSession = Depends(get_session),

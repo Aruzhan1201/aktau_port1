@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,11 +10,21 @@ from app.models.berth_reservation import BerthReservation, ReservationStatus
 from app.models.payment import Payment, PaymentStatus, PaymentType
 from app.models.ship import Ship, ShipStatus
 
+from app.services.cache_service import cache_get, cache_set
 from app.services.port_queue_service import calculate_average_waiting_time
 from app.services.payment_service import get_revenue
 
 
+def _make_cache_key(prefix: str, session: AsyncSession) -> str:
+    raw = f"{prefix}:{id(session)}"
+    return f"analytics:{hashlib.md5(raw.encode()).hexdigest()}"
+
+
 async def get_dashboard(session: AsyncSession) -> dict:
+    cache_key = _make_cache_key("dashboard", session)
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
     total_cargoes = await _count(session, select(func.count(Cargo.id)))
     income_data = await get_revenue(session)
 
@@ -43,7 +56,7 @@ async def get_dashboard(session: AsyncSession) -> dict:
         )
         cargoes_by_status[status.value] = cnt
 
-    return {
+    result = {
         "total_cargoes": total_cargoes,
         "total_income": income_data["total_income"],
         "income_by_type": {
@@ -58,6 +71,8 @@ async def get_dashboard(session: AsyncSession) -> dict:
         "ship_utilization_pct": ship_util,
         "cargoes_by_status": cargoes_by_status,
     }
+    await cache_set(cache_key, result)
+    return result
 
 
 async def get_ship_utilization(session: AsyncSession) -> dict:

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.ship import Ship, ShipStatus
@@ -36,8 +36,6 @@ async def list_ships(
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[Ship], int]:
-    from sqlalchemy import func
-
     query = select(Ship)
     count_query = select(func.count(Ship.id))
     if status:
@@ -48,6 +46,28 @@ async def list_ships(
     query = query.order_by(Ship.name).offset(skip).limit(limit)
     result = await session.execute(query)
     return list(result.scalars().all()), total
+
+
+async def update_ship(
+    session: AsyncSession, ship_id: int, data: dict
+) -> Ship | None:
+    ship = await get_ship(session, ship_id)
+    if not ship:
+        return None
+    for key, value in data.items():
+        if value is not None and hasattr(ship, key):
+            setattr(ship, key, value)
+    await session.flush()
+    return ship
+
+
+async def delete_ship(session: AsyncSession, ship_id: int) -> Ship | None:
+    ship = await get_ship(session, ship_id)
+    if not ship:
+        return None
+    await session.delete(ship)
+    await session.flush()
+    return ship
 
 
 async def update_ship_location(

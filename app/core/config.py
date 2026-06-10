@@ -26,6 +26,8 @@ class Settings(BaseSettings):
 
     UPLOAD_DIR: str = "uploads/documents"
     MAX_UPLOAD_SIZE_MB: int = 10
+    REDIS_CACHE_TTL_SECONDS: int = 300
+    SCHEDULER_INTERVAL_SECONDS: int = 60
 
     @property
     def cors_origins_list(self) -> List[str]:

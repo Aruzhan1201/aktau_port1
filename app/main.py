@@ -45,7 +45,31 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("Telegram webhook setup failed: %s", e)
 
+    try:
+        from app.services.cache_service import init_redis
+        await init_redis()
+    except Exception as e:
+        logger.warning("Redis init failed: %s", e)
+
+    try:
+        from app.services.scheduler_service import start_scheduler
+        start_scheduler()
+    except Exception as e:
+        logger.warning("Scheduler start failed: %s", e)
+
     yield
+
+    try:
+        from app.services.scheduler_service import stop_scheduler
+        stop_scheduler()
+    except Exception as e:
+        logger.warning("Scheduler stop failed: %s", e)
+
+    try:
+        from app.services.cache_service import close_redis
+        await close_redis()
+    except Exception as e:
+        logger.warning("Redis close failed: %s", e)
 
     await engine.dispose()
     logger.info("Engine disposed")

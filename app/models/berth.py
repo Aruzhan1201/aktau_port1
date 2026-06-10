@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, func
+from sqlalchemy import CheckConstraint, DateTime, Enum, Float, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,6 +16,9 @@ class BerthStatus(str, enum.Enum):
 
 class Berth(Base):
     __tablename__ = "berths"
+    __table_args__ = (
+        CheckConstraint("capacity > 0", name="ck_berth_capacity_positive"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)

@@ -1,12 +1,14 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.berth import Berth, BerthStatus
 from app.models.berth_reservation import BerthReservation, ReservationStatus
 from app.models.notification import Notification, NotificationType
 from app.models.ship import Ship
+
+from app.services.payment_service import are_reservation_payments_paid
 
 
 async def create_berth(
@@ -54,6 +56,66 @@ async def list_berths(
     return list(result.scalars().all()), total
 
 
+async def update_berth(
+    session: AsyncSession, berth_id: int, data: dict
+) -> Berth | None:
+    berth = await get_berth(session, berth_id)
+    if not berth:
+        return None
+    if "latitude" in data and "longitude" in data:
+        if data["latitude"] is not None and data["longitude"] is not None:
+            data["location_coords"] = {
+                "lat": data.pop("latitude"),
+                "lng": data.pop("longitude"),
+            }
+        else:
+            data.pop("latitude", None)
+            data.pop("longitude", None)
+    for key, value in data.items():
+        if value is not None and hasattr(berth, key):
+            setattr(berth, key, value)
+    await session.flush()
+    return berth
+
+
+async def delete_berth(session: AsyncSession, berth_id: int) -> Berth | None:
+    berth = await get_berth(session, berth_id)
+    if not berth:
+        return None
+    await session.delete(berth)
+    await session.flush()
+    return berth
+
+
+async def _check_overlapping_reservation(
+    session: AsyncSession,
+    berth_id: int,
+    arrival_time: datetime,
+    departure_time: datetime | None,
+    exclude_reservation_id: int | None = None,
+) -> bool:
+    query = select(BerthReservation).where(
+        BerthReservation.berth_id == berth_id,
+        BerthReservation.status == ReservationStatus.active,
+        BerthReservation.arrival_time < (
+            departure_time.replace(tzinfo=timezone.utc) if departure_time and departure_time.tzinfo is None
+            else departure_time or datetime(9999, 12, 31, tzinfo=timezone.utc)
+        ),
+        or_(
+            BerthReservation.departure_time.is_(None),
+            BerthReservation.departure_time > (
+                arrival_time.replace(tzinfo=timezone.utc) if arrival_time.tzinfo is None
+                else arrival_time
+            ),
+        ),
+    )
+    if exclude_reservation_id:
+        query = query.where(BerthReservation.id != exclude_reservation_id)
+
+    result = await session.execute(query)
+    return result.first() is not None
+
+
 async def reserve_berth(
     session: AsyncSession,
     berth_id: int,
@@ -65,10 +127,13 @@ async def reserve_berth(
     berth = await get_berth(session, berth_id)
     if not berth:
         raise ValueError("Berth not found")
-    if berth.status == BerthStatus.occupied:
-        raise ValueError("Berth is already occupied")
     if berth.status == BerthStatus.maintenance:
         raise ValueError("Berth is under maintenance")
+
+    if await _check_overlapping_reservation(
+        session, berth_id, arrival_time, departure_time
+    ):
+        raise ValueError("Berth is occupied for selected dates")
 
     ship_result = await session.execute(select(Ship).where(Ship.id == ship_id))
     ship = ship_result.scalar_one_or_none()
@@ -87,11 +152,7 @@ async def reserve_berth(
 
     if reserved_by:
         notif = Notification(
-            user_id=(
-                berth.manager_id
-                if berth.manager_id
-                else reserved_by
-            ),
+            user_id=berth.manager_id if berth.manager_id else reserved_by,
             title="Berth Reserved",
             message=f"Berth {berth.name} reserved for ship {ship.name}.",
             type=NotificationType.berth_update,

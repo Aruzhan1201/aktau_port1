@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,6 +55,60 @@ async def get_berth_reservations(
             }
         )
     return items, total
+
+
+async def get_reservation(
+    session: AsyncSession, reservation_id: int
+) -> BerthReservation | None:
+    result = await session.execute(
+        select(BerthReservation).where(BerthReservation.id == reservation_id)
+    )
+    return result.scalar_one_or_none()
+
+
+async def update_reservation(
+    session: AsyncSession, reservation_id: int, data: dict
+) -> BerthReservation | None:
+    reservation = await get_reservation(session, reservation_id)
+    if not reservation:
+        return None
+
+    if "arrival_time" in data or "departure_time" in data:
+        from app.services.berth_service import _check_overlapping_reservation
+
+        arrival = data.get("arrival_time", reservation.arrival_time)
+        departure = data.get("departure_time", reservation.departure_time)
+        if isinstance(arrival, str):
+            arrival = datetime.fromisoformat(arrival)
+        if isinstance(departure, str):
+            departure = datetime.fromisoformat(departure)
+
+        if await _check_overlapping_reservation(
+            session, reservation.berth_id, arrival, departure, reservation_id
+        ):
+            raise ValueError("Time range overlaps with an existing reservation")
+
+    if "status" in data:
+        from app.models.berth import BerthStatus
+
+        new_status = data.pop("status")
+        if new_status == "cancelled":
+            reservation.status = ReservationStatus.cancelled
+            berth = await session.get(Berth, reservation.berth_id)
+            if berth:
+                berth.status = BerthStatus.free
+        elif new_status == "completed":
+            reservation.status = ReservationStatus.completed
+            berth = await session.get(Berth, reservation.berth_id)
+            if berth:
+                berth.status = BerthStatus.free
+
+    for key in ("arrival_time", "departure_time"):
+        if key in data:
+            setattr(reservation, key, data[key])
+
+    await session.flush()
+    return reservation
 
 
 async def cancel_reservation(

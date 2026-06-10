@@ -10,6 +10,7 @@ from app.schemas.ship import (
     ShipCreate,
     ShipListResponse,
     ShipResponse,
+    ShipUpdate,
 )
 from app.services import ship_service
 
@@ -65,6 +66,31 @@ async def list_ships(
         session, status=status, skip=skip, limit=limit
     )
     return ShipListResponse(total=total, items=items)
+
+
+@router.put("/{ship_id}", response_model=ShipResponse)
+async def update_ship(
+    ship_id: int,
+    body: ShipUpdate,
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(RoleChecker(UserRole.admin)),
+):
+    updated = await ship_service.update_ship(session, ship_id, body.model_dump(exclude_unset=True))
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ship not found")
+    return updated
+
+
+@router.delete("/{ship_id}", response_model=ShipResponse)
+async def delete_ship(
+    ship_id: int,
+    session: AsyncSession = Depends(get_session),
+    _: User = Depends(RoleChecker(UserRole.admin)),
+):
+    deleted = await ship_service.delete_ship(session, ship_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ship not found")
+    return deleted
 
 
 @router.get("/{ship_id}", response_model=ShipResponse)
