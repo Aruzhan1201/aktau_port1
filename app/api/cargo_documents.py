@@ -26,7 +26,7 @@ async def upload_document(
     document_type: str = Form(...),
     file: UploadFile = File(...),
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(RoleChecker(UserRole.client, UserRole.admin)),
+    current_user: User = Depends(RoleChecker(UserRole.client, UserRole.captain, UserRole.driver, UserRole.admin)),
 ):
     cargo = await cargo_service.get_cargo(session, cargo_id)
     if not cargo:
@@ -81,7 +81,7 @@ async def verify_document(
     document_id: int,
     body: DocumentVerifyRequest,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(RoleChecker(UserRole.admin, UserRole.parking_manager)),
+    current_user: User = Depends(RoleChecker(UserRole.admin, UserRole.parking_manager, UserRole.governance)),
 ):
     doc = await cargo_document_service.verify_document(
         session=session,

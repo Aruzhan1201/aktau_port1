@@ -4,13 +4,15 @@ import { useAuthStore } from '@/store/authStore'
 import { ROUTES } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { UserCheck, UserCog, Ship, Anchor } from 'lucide-react'
+import { UserCheck, UserCog, Ship, Anchor, Car, Building2 } from 'lucide-react'
 import type { UserRole } from '@/types'
 
 const roles: { value: UserRole; label: string; description: string; icon: typeof UserCheck }[] = [
   { value: 'client', label: 'Client', description: 'Create and track cargo shipments', icon: UserCheck },
+  { value: 'driver', label: 'Driver', description: 'Transport cargo over land', icon: Car },
   { value: 'captain', label: 'Captain', description: 'Manage vessel operations', icon: Ship },
-  { value: 'parking_manager', label: 'Parking Manager', description: 'Coordinate berth assignments', icon: UserCog },
+  { value: 'parking_manager', label: 'Parking Manager', description: 'Manage parking zones', icon: UserCog },
+  { value: 'port_manager', label: 'Port Manager', description: 'Manage berths and docks', icon: Building2 },
 ]
 
 export function RegisterPage() {

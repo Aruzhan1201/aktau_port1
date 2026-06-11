@@ -29,4 +29,10 @@ export const mapApi = {
     apiClient.get<BerthMapResponse[]>('/maps/berths'),
   route: (cargoId: number) =>
     apiClient.get<RouteResponse>(`/maps/routes/${cargoId}`),
+  portBerths: (port: string) =>
+    apiClient.get(`/maps/${port}/berths`),
+  portRoutes: (port: string) =>
+    apiClient.get(`/maps/${port}/routes`),
+  portConfig: (port: string) =>
+    apiClient.get(`/maps/${port}/config`),
 }

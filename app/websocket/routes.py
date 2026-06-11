@@ -140,13 +140,37 @@ async def websocket_endpoint(websocket: WebSocket):
                         },
                     )
 
+            elif msg_type == "subscribe_incidents":
+                port = data.get("port")
+                if port:
+                    await manager.send_personal(
+                        user_id,
+                        {"type": "subscribed", "entity": "incidents", "port": port},
+                    )
+
+            elif msg_type == "subscribe_weather":
+                port = data.get("port")
+                if port:
+                    await manager.send_personal(
+                        user_id,
+                        {"type": "subscribed", "entity": "weather", "port": port},
+                    )
+
+            elif msg_type == "subscribe_berths":
+                port = data.get("port")
+                if port:
+                    await manager.send_personal(
+                        user_id,
+                        {"type": "subscribed", "entity": "berths", "port": port},
+                    )
+
             else:
                 await manager.send_personal(
                     user_id, {"type": "error", "message": f"Unknown type: {msg_type}"}
                 )
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket, user_id)
+        await manager.disconnect(websocket, user_id)
     except Exception as e:
         logger.error("WebSocket error for user %d: %s", user_id, str(e))
-        manager.disconnect(websocket, user_id)
+        await manager.disconnect(websocket, user_id)

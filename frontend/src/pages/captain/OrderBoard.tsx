@@ -1,24 +1,23 @@
 import { useState } from 'react'
-import { useCargoList, useUpdateCargoStatus, useAssignShip } from '@/hooks/useCargo'
+import { useCargoList, useAssignShip } from '@/hooks/useCargo'
+import { cargoApi } from '@/api/cargo'
+import { api } from '@/api/client'
 import { useAuthStore } from '@/store/authStore'
-import { useDealStore } from '@/store/dealStore'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DataTable } from '@/components/common/DataTable'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/ui/badge'
 import { useShipList } from '@/hooks/useShip'
 import { formatDate, formatWeight } from '@/lib/utils'
-import { CheckCircle, XCircle, MessageCircle, HandshakeIcon, Package } from 'lucide-react'
-import type { Cargo } from '@/types'
+import { CheckCircle, HandshakeIcon, Map, Package, XCircle } from 'lucide-react'
+import type { Cargo, DealCreateRequest } from '@/types'
 import { useNavigate } from 'react-router-dom'
 
 export function OrderBoard() {
   const user = useAuthStore((s) => s.user)
   const { data, isLoading } = useCargoList()
   const { data: ships } = useShipList()
-  const updateStatus = useUpdateCargoStatus(0)
   const assignShip = useAssignShip()
-  const createDeal = useDealStore((s) => s.createDeal)
   const navigate = useNavigate()
 
   const myShip = ships?.items?.find((s) => s.captain_id === user?.id)
@@ -33,22 +32,19 @@ export function OrderBoard() {
     setActionLoading(cargo.id)
     try {
       if (cargo.status === 'created') {
-        await updateStatus.mutateAsync({ status: 'approved' })
+        await cargoApi.updateStatus(cargo.id, { status: 'approved' })
       }
       await assignShip.mutateAsync({ cargo_id: cargo.id, ship_id: myShip.id })
 
-      createDeal({
-        type: 'cargo_contract',
-        title: `Cargo #${cargo.id} — ${cargo.cargo_type}`,
-        description: `${cargo.origin} → ${cargo.destination}, ${cargo.weight}t`,
-        initiatorId: user.id,
-        targetId: cargo.client_id,
-        status: 'pending',
-        cargoId: cargo.id,
-        shipId: myShip.id,
-      })
+      await api.post('/deals/', {
+        type: 'cargo_transport',
+        client_id: cargo.client_id,
+        captain_id: user.id,
+        cargo_id: cargo.id,
+        notes: `${cargo.cargo_type}: ${cargo.origin} → ${cargo.destination}, ${cargo.weight}t`,
+      } as DealCreateRequest)
 
-      navigate('/captain/deals')
+      navigate('/deals')
     } finally {
       setActionLoading(null)
     }
@@ -64,7 +60,12 @@ export function OrderBoard() {
     )},
     { key: 'weight', header: 'Weight', render: (c: Cargo) => <span className="text-slate-600">{formatWeight(c.weight)}</span> },
     { key: 'origin', header: 'Route', render: (c: Cargo) => (
-      <span className="text-slate-600 text-xs">{c.origin} → {c.destination}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-slate-600 text-xs">{c.origin} → {c.destination}</span>
+        <Link to={`/map?cargo=${c.id}`} className="text-blue-500 hover:text-blue-700">
+          <Map className="w-3 h-3" />
+        </Link>
+      </div>
     )},
     { key: 'status', header: 'Status', render: (c: Cargo) => <StatusBadge status={c.status} /> },
     { key: 'created', header: 'Created', render: (c: Cargo) => <span className="text-slate-500 text-xs">{formatDate(c.created_at)}</span> },
@@ -84,17 +85,15 @@ export function OrderBoard() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => {
-              createDeal({
-                type: 'cargo_contract',
-                title: `Cargo #${c.id} — ${c.cargo_type}`,
-                description: `${c.origin} → ${c.destination}, ${c.weight}t`,
-                initiatorId: user!.id,
-                targetId: c.client_id,
-                status: 'pending',
-                cargoId: c.id,
-              })
-              navigate('/captain/deals')
+            onClick={async () => {
+              await api.post('/deals/', {
+                type: 'cargo_transport',
+                client_id: c.client_id,
+                captain_id: user!.id,
+                cargo_id: c.id,
+                notes: `${c.cargo_type}: ${c.origin} → ${c.destination}, ${c.weight}t`,
+              } as DealCreateRequest)
+              navigate('/deals')
             }}
           >
             <HandshakeIcon className="w-3.5 h-3.5" />

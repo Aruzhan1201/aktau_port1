@@ -70,3 +70,58 @@ export function useMapRoute(cargoId: number) {
     enabled: !!cargoId,
   })
 }
+
+export function usePortMapBerths(port: string) {
+  return useQuery({
+    queryKey: ['maps', port, 'berths'],
+    queryFn: () => mapApi.portBerths(port).then((r) => r.data),
+    staleTime: 10_000,
+    enabled: !!port,
+  })
+}
+
+export function usePortMapRoutes(port: string) {
+  return useQuery({
+    queryKey: ['maps', port, 'routes'],
+    queryFn: () => mapApi.portRoutes(port).then((r) => r.data),
+    staleTime: 60_000,
+    enabled: !!port,
+  })
+}
+
+export function useMapPortConfig(port: string) {
+  return useQuery({
+    queryKey: ['maps', port, 'config'],
+    queryFn: () => mapApi.portConfig(port).then((r) => r.data),
+    staleTime: 300_000,
+    enabled: !!port,
+  })
+}
+
+export function useWeather(port: string) {
+  return useQuery({
+    queryKey: ['weather', port],
+    queryFn: () => weatherApi.getCurrent(port),
+    staleTime: 300_000,
+    enabled: !!port,
+  })
+}
+
+export function useWeatherForecast(port: string) {
+  return useQuery({
+    queryKey: ['weather', port, 'forecast'],
+    queryFn: () => weatherApi.getForecast(port),
+    staleTime: 600_000,
+    enabled: !!port,
+  })
+}
+
+export function useWeatherAlerts() {
+  return useQuery({
+    queryKey: ['weather', 'alerts'],
+    queryFn: () => weatherApi.getAlerts(),
+    staleTime: 60_000,
+  })
+}
+
+import { weatherApi } from '@/api/weather'

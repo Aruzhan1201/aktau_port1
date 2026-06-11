@@ -22,6 +22,17 @@ from app.api import (
     ai_order,
     maps,
     telegram_webhook,
+    weather,
+    incidents,
+    ro_ro,
+    tariffs,
+    reports,
+    admin_users,
+    port_admin,
+    gov_analytics,
+    parking,
+    deals,
+    governance,
 )
 from app.websocket.routes import router as ws_router
 
@@ -32,11 +43,31 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+async def _migrate_payments(conn):
+    """Add payment detail columns if missing (Postgres)."""
+    dialect = conn.dialect.name
+    if dialect != "postgresql":
+        return
+    for col_name, col_type in [
+        ("bank_name", "VARCHAR(100)"),
+        ("bank_account", "VARCHAR(50)"),
+        ("payment_method", "VARCHAR(30)"),
+        ("reference_number", "VARCHAR(100)"),
+    ]:
+        try:
+            await conn.execute(
+                f"ALTER TABLE payments ADD COLUMN IF NOT EXISTS {col_name} {col_type}"
+            )
+        except Exception:
+            pass
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s", settings.APP_NAME)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await _migrate_payments(conn)
     logger.info("Database tables synced")
 
     try:
@@ -103,6 +134,17 @@ app.include_router(analytics.router)
 app.include_router(ai_order.router)
 app.include_router(maps.router)
 app.include_router(telegram_webhook.router)
+app.include_router(weather.router)
+app.include_router(incidents.router)
+app.include_router(ro_ro.router)
+app.include_router(tariffs.router)
+app.include_router(reports.router)
+app.include_router(admin_users.router)
+app.include_router(port_admin.router)
+app.include_router(gov_analytics.router)
+app.include_router(parking.router)
+app.include_router(deals.router)
+app.include_router(governance.router)
 app.include_router(ws_router)
 
 

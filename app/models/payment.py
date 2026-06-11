@@ -51,6 +51,10 @@ class Payment(Base):
     paid_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    bank_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    bank_account: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    payment_method: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    reference_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     cargo: Mapped["Cargo"] = relationship("Cargo", back_populates="payments")
     paid_by_user: Mapped["User"] = relationship("User", back_populates="payments_made")

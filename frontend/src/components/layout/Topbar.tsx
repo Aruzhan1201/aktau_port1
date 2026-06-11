@@ -1,11 +1,14 @@
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Bell, LogOut, WifiOff } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useUiStore } from '@/store/uiStore'
 import { ROUTES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 export function Topbar() {
+  const { t } = useTranslation()
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const offline = useUiStore((s) => s.offline)
@@ -20,7 +23,7 @@ export function Topbar() {
       {offline && (
         <div className="flex items-center justify-center gap-2 bg-amber-50 text-amber-700 text-xs py-1.5 border-b border-amber-200">
           <WifiOff className="w-3 h-3" />
-          <span>You are offline. Data may be stale.</span>
+          <span>{t('common.offline')}</span>
         </div>
       )}
       <div className="flex items-center justify-between h-14 px-6">
@@ -35,6 +38,7 @@ export function Topbar() {
           >
             <Bell className="w-4.5 h-4.5" />
           </button>
+          <LanguageSwitcher />
           <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-semibold text-white">

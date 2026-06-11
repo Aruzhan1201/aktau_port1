@@ -1,13 +1,13 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useAuthStore } from '@/store/authStore'
-import { useDealStore, tariffPlans } from '@/store/dealStore'
+import { useDealStore } from '@/store/dealStore'
 import { useChatStore } from '@/store/chatStore'
 import { useWsStore } from '@/store/wsStore'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatDate, formatCurrency } from '@/lib/utils'
-import { HandshakeIcon, CheckCircle2, XCircle, MessageCircle, Phone, User, Anchor, Package, ArrowRight, Clock } from 'lucide-react'
+import { HandshakeIcon, CheckCircle2, XCircle, Phone, Anchor, Package, Clock, MessageCircle } from 'lucide-react'
 import type { Deal, ChatMessage } from '@/types'
 
 const statusColors: Record<string, string> = {
@@ -29,7 +29,7 @@ export function DealsPage() {
   const approvePhoneReveal = useDealStore((s) => s.approvePhoneReveal)
   const addMessage = useChatStore((s) => s.addMessage)
   const wsSend = useWsStore((s) => s.send)
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
+  const setSelectedDeal = (_deal: Deal | null) => {}
 
   const handleApprove = (deal: Deal) => {
     updateDealStatus(deal.id, 'approved')

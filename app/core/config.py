@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     APP_NAME: str = "Aktau Port Logistics"
-    DEBUG: bool = True
+    DEBUG: bool = False
     SECRET_KEY: str = "change-this-to-a-random-secret-key"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
@@ -22,12 +22,18 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_WEBHOOK_URL: str = ""
 
-    CORS_ORIGINS: str = '["*"]'
+    CORS_ORIGINS: str = '["http://localhost:5173","http://localhost:3000"]'
 
     UPLOAD_DIR: str = "uploads/documents"
     MAX_UPLOAD_SIZE_MB: int = 10
     REDIS_CACHE_TTL_SECONDS: int = 300
     SCHEDULER_INTERVAL_SECONDS: int = 60
+    OPENWEATHERMAP_API_KEY: str = ""
+    WEATHER_CACHE_TTL_SECONDS: int = 1800
+    WEATHER_SCHEDULER_INTERVAL_SECONDS: int = 1800
+    STORM_WIND_THRESHOLD: float = 15.0
+    STORM_WAVE_THRESHOLD: float = 3.0
+    STORM_VISIBILITY_THRESHOLD: float = 500.0
 
     @property
     def cors_origins_list(self) -> List[str]:

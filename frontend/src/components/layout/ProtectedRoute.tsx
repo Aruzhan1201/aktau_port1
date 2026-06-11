@@ -26,7 +26,12 @@ export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
   }
 
   if (roles && user && !roles.includes(user.role as UserRole)) {
-    return <Navigate to={ROUTES.DASHBOARD} replace />
+    const roleDashboards: Record<string, string> = {
+      client: ROUTES.CLIENT_DASHBOARD,
+      driver: ROUTES.DRIVER_DASHBOARD,
+      captain: ROUTES.CAPTAIN_DASHBOARD,
+    }
+    return <Navigate to={roleDashboards[user.role] || ROUTES.DASHBOARD} replace />
   }
 
   return <>{children}</>

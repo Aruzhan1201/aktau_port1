@@ -4,12 +4,13 @@ import { useAuthStore } from '@/store/authStore'
 import { ROUTES } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Anchor, Ship } from 'lucide-react'
+import { Anchor, Ship, ChevronDown, ChevronUp } from 'lucide-react'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [showDemo, setShowDemo] = useState(true)
   const login = useAuthStore((s) => s.login)
   const navigate = useNavigate()
 
@@ -55,6 +56,9 @@ export function LoginPage() {
             <p className="text-slate-500 mt-1 text-sm">Sign in to your account</p>
           </div>
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-5">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm text-blue-700">
+              All demo accounts password: <strong className="font-mono">demo123</strong>
+            </div>
             {error && (
               <div className="bg-red-50 text-red-600 text-sm px-4 py-2.5 rounded-lg border border-red-200 flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
@@ -79,18 +83,43 @@ export function LoginPage() {
               placeholder="Enter your password"
               required
             />
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-slate-600 cursor-pointer">
-                <input type="checkbox" defaultChecked className="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20" />
-                Remember me
-              </label>
-              <button type="button" className="text-blue-600 hover:text-blue-700 font-medium">
-                Forgot password?
-              </button>
-            </div>
             <Button type="submit" className="w-full" size="lg">
               Sign In
             </Button>
+            <div className="border-t border-slate-100 pt-3">
+              <button type="button" onClick={() => setShowDemo(!showDemo)} className="flex items-center justify-between w-full text-sm text-slate-500 hover:text-slate-700">
+                <span className="font-medium">Demo Accounts</span>
+                {showDemo ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {showDemo && (
+                <div className="mt-2 text-xs space-y-1 max-h-48 overflow-y-auto">
+                  {[
+                    ['admin', 'admin@demo.kz'],
+                    ['super_admin', 'super@demo.kz'],
+                    ['client', 'alice@demo.kz'],
+                    ['client', 'bob@demo.kz'],
+                    ['captain', 'smith@demo.kz'],
+                    ['captain', 'jones@demo.kz'],
+                    ['driver', 'dave@demo.kz'],
+                    ['driver', 'eve@demo.kz'],
+                    ['parking_manager', 'park@demo.kz'],
+                    ['port_manager', 'port@demo.kz'],
+                    ['governance', 'gov@demo.kz'],
+                  ].map(([role, mail]) => (
+                    <button
+                      key={mail}
+                      type="button"
+                      onClick={() => { setEmail(mail); setPassword('demo123') }}
+                      className="flex items-center justify-between w-full px-2 py-1.5 rounded hover:bg-slate-50 text-left"
+                    >
+                      <span className="text-slate-400 w-24 shrink-0">{role.replace('_', ' ')}</span>
+                      <span className="font-mono text-slate-600">{mail}</span>
+                      <span className="text-slate-300 ml-2">demo123</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <p className="text-sm text-center text-slate-500">
               Don&apos;t have an account?{' '}
               <Link to={ROUTES.REGISTER} className="text-blue-600 hover:text-blue-700 font-medium">

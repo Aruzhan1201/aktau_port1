@@ -18,4 +18,10 @@ export const cargoApi = {
     apiClient.post<Cargo>('/cargo/assign-ship', data),
   aiOrder: (data: AIOrderInput) =>
     apiClient.post<AIOrderOutput>('/ai-order/', data),
+  approveCaptain: (id: number) =>
+    apiClient.patch(`/cargo/${id}/approve-captain`),
+  approveClient: (id: number) =>
+    apiClient.patch(`/cargo/${id}/approve-client`),
+  revealPhone: (id: number) =>
+    apiClient.post(`/cargo/${id}/reveal-phone`),
 }

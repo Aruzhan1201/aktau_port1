@@ -1,1 +1,6 @@
-frontend/nul 
+__pycache__/  
+*.pyc  
+test.db  
+node_modules/  
+.env  
+*nul* 

@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +16,7 @@ from app.schemas.cargo import (
     CargoUpdate,
 )
 from app.services import cargo_service
+from app.websocket.manager import manager
 
 router = APIRouter(prefix="/cargo", tags=["Cargoes"])
 
@@ -33,6 +36,13 @@ async def create_cargo(
         origin=body.origin,
         destination=body.destination,
         eta=body.eta,
+        sender_name=body.sender_name,
+        sender_phone=body.sender_phone,
+        receiver_name=body.receiver_name,
+        receiver_phone=body.receiver_phone,
+        route_waypoints=body.route_waypoints,
+        vehicle_type=body.vehicle_type.value if body.vehicle_type else None,
+        budget=body.budget,
     )
     return cargo
 
@@ -55,6 +65,7 @@ async def get_cargo(
 async def list_cargoes(
     status: CargoStatus | None = Query(None),
     ship_id: int | None = Query(None),
+    driver_id: int | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     session: AsyncSession = Depends(get_session),
@@ -64,7 +75,7 @@ async def list_cargoes(
     if current_user.role == UserRole.admin:
         client_id = None
     items, total = await cargo_service.list_cargoes(
-        session, client_id=client_id, status=status, ship_id=ship_id, skip=skip, limit=limit
+        session, client_id=client_id, driver_id=driver_id, status=status, ship_id=ship_id, skip=skip, limit=limit
     )
     return CargoListResponse(total=total, items=items)
 
@@ -130,7 +141,7 @@ async def delete_cargo(
 async def assign_ship(
     body: AssignShipRequest,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin)),
+    current_user: User = Depends(RoleChecker(UserRole.captain, UserRole.parking_manager, UserRole.admin)),
 ):
     try:
         cargo = await cargo_service.assign_ship_to_cargo(
@@ -144,3 +155,76 @@ async def assign_ship(
         return cargo
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.patch("/{cargo_id}/approve-captain")
+async def approve_captain(
+    cargo_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(RoleChecker(UserRole.captain, UserRole.admin, UserRole.super_admin)),
+):
+    cargo = await cargo_service.get_cargo(session, cargo_id)
+    if not cargo:
+        raise HTTPException(status_code=404, detail="Cargo not found")
+    cargo.captain_approved = True
+    await session.commit()
+    await session.refresh(cargo)
+    phone_revealed = False
+    if cargo.captain_approved and cargo.client_approved and not cargo.phone_revealed_at:
+        cargo.phone_revealed_at = datetime.now(timezone.utc)
+        await session.commit()
+        phone_revealed = True
+    await manager.broadcast_cargo_update(cargo_id, {
+        "type": "cargo_update",
+        "cargo_id": cargo_id,
+        "captain_approved": True,
+        "client_approved": cargo.client_approved,
+        "phone_revealed": phone_revealed,
+    })
+    return {"message": "Captain approved", "captain_approved": True, "client_approved": cargo.client_approved}
+
+
+@router.patch("/{cargo_id}/approve-client")
+async def approve_client(
+    cargo_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(RoleChecker(UserRole.client, UserRole.admin, UserRole.super_admin)),
+):
+    cargo = await cargo_service.get_cargo(session, cargo_id)
+    if not cargo:
+        raise HTTPException(status_code=404, detail="Cargo not found")
+    cargo.client_approved = True
+    await session.commit()
+    await session.refresh(cargo)
+    phone_revealed = False
+    if cargo.captain_approved and cargo.client_approved and not cargo.phone_revealed_at:
+        cargo.phone_revealed_at = datetime.now(timezone.utc)
+        await session.commit()
+        phone_revealed = True
+    await manager.broadcast_cargo_update(cargo_id, {
+        "type": "cargo_update",
+        "cargo_id": cargo_id,
+        "captain_approved": cargo.captain_approved,
+        "client_approved": True,
+        "phone_revealed": phone_revealed,
+    })
+    return {"message": "Client approved", "client_approved": True, "captain_approved": cargo.captain_approved}
+
+
+@router.post("/{cargo_id}/reveal-phone")
+async def reveal_phone(
+    cargo_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    cargo = await cargo_service.get_cargo(session, cargo_id)
+    if not cargo:
+        raise HTTPException(status_code=404, detail="Cargo not found")
+    if not cargo.captain_approved or not cargo.client_approved:
+        raise HTTPException(status_code=400, detail="Both parties must approve before phone reveal")
+    return {
+        "sender_phone": cargo.sender_phone or cargo.client.phone if cargo.client else None,
+        "receiver_phone": cargo.receiver_phone,
+        "driver_phone": cargo.driver.phone if cargo.driver else None,
+        "revealed_at": cargo.phone_revealed_at.isoformat() if cargo.phone_revealed_at else None,
+    }

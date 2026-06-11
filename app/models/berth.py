@@ -10,6 +10,7 @@ from app.core.database import Base
 
 class BerthStatus(str, enum.Enum):
     free = "free"
+    reserved = "reserved"
     occupied = "occupied"
     maintenance = "maintenance"
 
@@ -44,4 +45,7 @@ class Berth(Base):
     )
     assignments: Mapped[list["Assignment"]] = relationship(
         "Assignment", back_populates="berth"
+    )
+    status_logs: Mapped[list["BerthStatusLog"]] = relationship(
+        "BerthStatusLog", back_populates="berth", cascade="all, delete-orphan"
     )

@@ -9,9 +9,16 @@ from app.core.database import Base
 
 class UserRole(str, enum.Enum):
     client = "client"
-    captain = "captain"
+    sender = "sender"
+    receiver = "receiver"
     parking_manager = "parking_manager"
+    driver = "driver"
+    captain = "captain"
+    port_manager = "port_manager"
+    governance = "governance"
+    gov_authority = "gov_authority"
     admin = "admin"
+    super_admin = "super_admin"
 
 
 class User(Base):
@@ -38,6 +45,15 @@ class User(Base):
     cargoes: Mapped[list["Cargo"]] = relationship(
         "Cargo", back_populates="client", foreign_keys="Cargo.client_id"
     )
+    sent_cargoes: Mapped[list["Cargo"]] = relationship(
+        "Cargo", back_populates="sender", foreign_keys="Cargo.sender_id"
+    )
+    received_cargoes: Mapped[list["Cargo"]] = relationship(
+        "Cargo", back_populates="receiver", foreign_keys="Cargo.receiver_id"
+    )
+    driver_cargoes: Mapped[list["Cargo"]] = relationship(
+        "Cargo", back_populates="driver", foreign_keys="Cargo.driver_id"
+    )
     captain_ships: Mapped[list["Ship"]] = relationship(
         "Ship", back_populates="captain", foreign_keys="Ship.captain_id"
     )
@@ -55,4 +71,25 @@ class User(Base):
     )
     payments_made: Mapped[list["Payment"]] = relationship(
         "Payment", back_populates="paid_by_user"
+    )
+    reported_incidents: Mapped[list["IncidentReport"]] = relationship(
+        "IncidentReport", back_populates="reporter"
+    )
+    generated_reports: Mapped[list["PerformanceReport"]] = relationship(
+        "PerformanceReport", back_populates="generator"
+    )
+    managed_parking_zones: Mapped[list["ParkingZone"]] = relationship(
+        "ParkingZone", back_populates="parking_manager", foreign_keys="ParkingZone.manager_id"
+    )
+    assigned_parking_spots: Mapped[list["ParkingSpot"]] = relationship(
+        "ParkingSpot", back_populates="driver", foreign_keys="ParkingSpot.driver_id"
+    )
+    deals_as_client: Mapped[list["Deal"]] = relationship(
+        "Deal", back_populates="client", foreign_keys="Deal.client_id"
+    )
+    deals_as_driver: Mapped[list["Deal"]] = relationship(
+        "Deal", back_populates="driver", foreign_keys="Deal.driver_id"
+    )
+    deals_as_captain: Mapped[list["Deal"]] = relationship(
+        "Deal", back_populates="captain", foreign_keys="Deal.captain_id"
     )

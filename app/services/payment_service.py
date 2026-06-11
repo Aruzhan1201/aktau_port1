@@ -14,6 +14,10 @@ async def create_payment(
     cargo_id: int | None = None,
     reservation_id: int | None = None,
     paid_by: int | None = None,
+    bank_name: str | None = None,
+    bank_account: str | None = None,
+    payment_method: str | None = None,
+    reference_number: str | None = None,
 ) -> Payment:
     payment = Payment(
         type=payment_type,
@@ -23,6 +27,10 @@ async def create_payment(
         reservation_id=reservation_id,
         paid_by=paid_by,
         status=PaymentStatus.pending,
+        bank_name=bank_name,
+        bank_account=bank_account,
+        payment_method=payment_method,
+        reference_number=reference_number,
     )
     session.add(payment)
     await session.flush()
@@ -37,6 +45,8 @@ async def get_payment(session: AsyncSession, payment_id: int) -> Payment | None:
 async def list_payments(
     session: AsyncSession,
     payment_type: PaymentType | None = None,
+    paid_by: int | None = None,
+    cargo_ids: list[int] | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> tuple[list[Payment], int]:
@@ -45,6 +55,12 @@ async def list_payments(
     if payment_type:
         query = query.where(Payment.type == payment_type)
         count_query = count_query.where(Payment.type == payment_type)
+    if paid_by is not None:
+        query = query.where(Payment.paid_by == paid_by)
+        count_query = count_query.where(Payment.paid_by == paid_by)
+    if cargo_ids:
+        query = query.where(Payment.cargo_id.in_(cargo_ids))
+        count_query = count_query.where(Payment.cargo_id.in_(cargo_ids))
     total = (await session.execute(count_query)).scalar() or 0
     query = query.order_by(Payment.created_at.desc()).offset(skip).limit(limit)
     result = await session.execute(query)

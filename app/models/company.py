@@ -21,4 +21,4 @@ class Company(Base):
     )
 
     users: Mapped[list["User"]] = relationship("User", back_populates="company")
-    cargoes: Mapped[list["Cargo"]] = relationship("Cargo", back_populates="company")
+    cargoes: Mapped[list["Cargo"]] = relationship("Cargo", back_populates="company", foreign_keys="Cargo.company_id")

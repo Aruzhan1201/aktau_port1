@@ -1,4 +1,4 @@
-export type UserRole = 'client' | 'captain' | 'parking_manager' | 'admin'
+export type UserRole = 'client' | 'parking_manager' | 'driver' | 'captain' | 'port_manager' | 'governance' | 'admin' | 'super_admin'
 
 export type CargoStatus = 'created' | 'approved' | 'assigned' | 'loading' | 'in_transit' | 'arrived' | 'delivered' | 'cancelled'
 

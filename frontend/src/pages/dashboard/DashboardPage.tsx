@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useDashboard } from '@/hooks/useEntities'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SkeletonCard } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDuration } from '@/lib/utils'
-import { Package, DollarSign, Anchor, Clock } from 'lucide-react'
+import { Package, DollarSign, Anchor, Clock, AlertTriangle, Plus, X } from 'lucide-react'
 import {
   BarChart,
   Bar,
@@ -16,6 +18,7 @@ import {
   Cell,
 } from 'recharts'
 import type { PieLabelRenderProps } from 'recharts'
+import { useCreateIncident } from '@/hooks/useIncidents'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#f97316', '#8b5cf6', '#06b6d4', '#22c55e', '#ef4444']
 
@@ -48,11 +51,32 @@ function CustomPieTooltip({ active, payload }: { active?: boolean; payload?: { n
 
 export function DashboardPage() {
   const { data, isLoading } = useDashboard()
+  const createIncident = useCreateIncident()
+  const [showIncidentForm, setShowIncidentForm] = useState(false)
+  const [incidentForm, setIncidentForm] = useState({ port: 'aktau', incident_type: '', severity: 'medium', description: '' })
+
+  const handleCreateIncident = () => {
+    createIncident.mutate(incidentForm, {
+      onSuccess: () => {
+        setShowIncidentForm(false)
+        setIncidentForm({ port: 'aktau', incident_type: '', severity: 'medium', description: '' })
+      },
+    })
+  }
 
   if (isLoading) {
     return (
       <div>
-        <PageHeader title="Dashboard" description="Port operations overview" />
+        <PageHeader
+          title="Dashboard"
+          description="Port operations overview"
+          actions={
+            <Button size="sm" onClick={() => setShowIncidentForm(true)}>
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Report Incident
+            </Button>
+          }
+        />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
@@ -60,9 +84,38 @@ export function DashboardPage() {
           <div className="rounded-xl border border-slate-200 bg-white p-5 h-72 animate-pulse" />
           <div className="rounded-xl border border-slate-200 bg-white p-5 h-72 animate-pulse" />
         </div>
-      </div>
-    )
-  }
+      {/* Incident Report Modal */}
+      {showIncidentForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowIncidentForm(false)}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-lg">Report Incident</h3>
+              <button onClick={() => setShowIncidentForm(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-3">
+              <select value={incidentForm.port} onChange={(e) => setIncidentForm({ ...incidentForm, port: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="aktau">Aktau</option><option value="kuryk">Kuryk</option>
+              </select>
+              <input placeholder="Incident type" value={incidentForm.incident_type} onChange={(e) => setIncidentForm({ ...incidentForm, incident_type: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+              <select value={incidentForm.severity} onChange={(e) => setIncidentForm({ ...incidentForm, severity: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option>
+              </select>
+              <textarea placeholder="Description" value={incidentForm.description} onChange={(e) => setIncidentForm({ ...incidentForm, description: e.target.value })} rows={3}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+              <button onClick={handleCreateIncident} disabled={!incidentForm.incident_type || !incidentForm.description}
+                className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium">
+                Submit Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
   const statusData = data?.cargoes_by_status
     ? Object.entries(data.cargoes_by_status).map(([name, value]) => ({ name, value }))
@@ -74,7 +127,16 @@ export function DashboardPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Dashboard" description="Port operations overview" />
+      <PageHeader
+        title="Dashboard"
+        description="Port operations overview"
+        actions={
+          <Button size="sm" onClick={() => setShowIncidentForm(true)}>
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Report Incident
+          </Button>
+        }
+      />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {kpis.map((kpi) => {
           const Icon = kpi.icon

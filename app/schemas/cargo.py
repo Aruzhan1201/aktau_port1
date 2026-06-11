@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.models.cargo import CargoStatus
+from app.models.cargo import CargoStatus, VehicleType
 
 
 class CargoCreate(BaseModel):
@@ -11,6 +11,13 @@ class CargoCreate(BaseModel):
     origin: str = Field(..., max_length=255)
     destination: str = Field(..., max_length=255)
     eta: datetime | None = None
+    sender_name: str | None = Field(None, max_length=255)
+    sender_phone: str | None = Field(None, max_length=50)
+    receiver_name: str | None = Field(None, max_length=255)
+    receiver_phone: str | None = Field(None, max_length=50)
+    route_waypoints: list[dict] | None = None
+    vehicle_type: VehicleType | None = None
+    budget: float | None = None
 
 
 class CargoUpdate(BaseModel):
@@ -19,6 +26,13 @@ class CargoUpdate(BaseModel):
     origin: str | None = Field(None, max_length=255)
     destination: str | None = Field(None, max_length=255)
     eta: datetime | None = None
+    sender_name: str | None = Field(None, max_length=255)
+    sender_phone: str | None = Field(None, max_length=50)
+    receiver_name: str | None = Field(None, max_length=255)
+    receiver_phone: str | None = Field(None, max_length=50)
+    route_waypoints: list[dict] | None = None
+    vehicle_type: VehicleType | None = None
+    budget: float | None = None
 
 
 class CargoResponse(BaseModel):
@@ -26,10 +40,14 @@ class CargoResponse(BaseModel):
     client_id: int
     company_id: int | None
     ship_id: int | None
+    driver_id: int | None
     cargo_type: str
     weight: float
     origin: str
     destination: str
+    route_waypoints: list[dict] | None
+    vehicle_type: VehicleType | None
+    budget: float | None
     status: CargoStatus
     eta: datetime | None
     priority_score: float
@@ -37,6 +55,12 @@ class CargoResponse(BaseModel):
     flag_reason: str | None
     ai_generated: bool
     ai_confidence: float | None
+    sender_name: str | None
+    sender_phone: str | None
+    receiver_name: str | None
+    receiver_phone: str | None
+    captain_approved: bool
+    client_approved: bool
     created_at: datetime
     updated_at: datetime
 

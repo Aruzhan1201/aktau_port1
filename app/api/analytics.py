@@ -13,7 +13,7 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 @router.get("/dashboard", response_model=DashboardResponse)
 async def get_dashboard(
     session: AsyncSession = Depends(get_session),
-    _: User = Depends(RoleChecker(UserRole.admin)),
+    _: User = Depends(RoleChecker(UserRole.admin, UserRole.super_admin, UserRole.governance, UserRole.port_manager, UserRole.parking_manager)),
 ):
     return await analytics_service.get_dashboard(session)
 

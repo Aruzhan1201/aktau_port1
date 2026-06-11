@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { WS_BASE_URL } from '@/lib/constants'
+import { useAuthStore } from './authStore'
 
 interface QueuedMessage {
   id: string
@@ -14,10 +15,18 @@ interface PendingAck {
   timer: ReturnType<typeof setTimeout>
 }
 
+interface WsSubscriptions {
+  ships: Set<number>
+  cargoes: Set<number>
+  incidents: string | false
+  weather: string | false
+  berths: string | false
+}
+
 interface WsState {
   status: 'disconnected' | 'connecting' | 'connected' | 'reconnecting'
   socket: WebSocket | null
-  subscriptions: { ships: Set<number>; cargoes: Set<number> }
+  subscriptions: WsSubscriptions
   messageQueue: QueuedMessage[]
   reconnectAttempt: number
   maxReconnectDelay: number
@@ -27,6 +36,8 @@ interface WsState {
   disconnect: () => void
   subscribe: (type: 'ship' | 'cargo', id: number) => void
   unsubscribe: (type: 'ship' | 'cargo', id: number) => void
+  subscribeChannel: (channel: 'incidents' | 'weather' | 'berths', port?: string) => void
+  unsubscribeChannel: (channel: 'incidents' | 'weather' | 'berths') => void
   send: (message: object) => Promise<unknown>
 }
 
@@ -37,7 +48,7 @@ function generateId(): string {
 export const useWsStore = create<WsState>((set, get) => ({
   status: 'disconnected',
   socket: null,
-  subscriptions: { ships: new Set(), cargoes: new Set() },
+      subscriptions: { ships: new Set(), cargoes: new Set(), incidents: false, weather: false, berths: false } as WsSubscriptions,
   messageQueue: [],
   reconnectAttempt: 0,
   maxReconnectDelay: 30000,
@@ -48,7 +59,8 @@ export const useWsStore = create<WsState>((set, get) => ({
     if (state.socket?.readyState === WebSocket.OPEN) return
 
     set({ status: 'connecting' })
-    const ws = new WebSocket(`${WS_BASE_URL}/ws`)
+    const token = useAuthStore.getState().token
+    const ws = new WebSocket(`${WS_BASE_URL}/ws${token ? `?token=${token}` : ''}`)
 
     ws.onopen = () => {
       set({ status: 'connected', reconnectAttempt: 0 })
@@ -60,6 +72,15 @@ export const useWsStore = create<WsState>((set, get) => ({
       subscriptions.cargoes.forEach((id) => {
         ws.send(JSON.stringify({ type: 'subscribe_cargo', cargo_id: id }))
       })
+      if (subscriptions.incidents !== false) {
+        ws.send(JSON.stringify({ type: 'subscribe_incidents', port: subscriptions.incidents }))
+      }
+      if (subscriptions.weather !== false) {
+        ws.send(JSON.stringify({ type: 'subscribe_weather', port: subscriptions.weather }))
+      }
+      if (subscriptions.berths !== false) {
+        ws.send(JSON.stringify({ type: 'subscribe_berths', port: subscriptions.berths }))
+      }
 
       messageQueue.forEach((qm) => {
         ws.send(JSON.stringify(qm.message))
@@ -89,7 +110,6 @@ export const useWsStore = create<WsState>((set, get) => ({
           }
           return
         }
-        // Forward to query cache updates happen via event emitter
         window.dispatchEvent(new CustomEvent('ws-message', { detail: data }))
       } catch { /* ignore */ }
     }
@@ -111,7 +131,7 @@ export const useWsStore = create<WsState>((set, get) => ({
       socket: null,
       status: 'disconnected',
       pendingAcks: new Map(),
-      subscriptions: { ships: new Set(), cargoes: new Set() },
+  subscriptions: { ships: new Set(), cargoes: new Set(), incidents: false, weather: false, berths: false } as WsSubscriptions,
       messageQueue: [],
       reconnectAttempt: 0,
     })
@@ -140,6 +160,21 @@ export const useWsStore = create<WsState>((set, get) => ({
       subscriptions.cargoes.delete(id)
     }
   },
+
+  subscribeChannel: (channel, port = 'aktau') => {
+    const { socket, subscriptions } = get()
+    ;(subscriptions as any)[channel] = port
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: `subscribe_${channel}`, port }))
+    }
+  },
+
+  unsubscribeChannel: (channel) => {
+    const { subscriptions } = get()
+    ;(subscriptions as any)[channel] = false
+  },
+
+
 
   send: (message) => {
     return new Promise((resolve, reject) => {

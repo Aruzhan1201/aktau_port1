@@ -122,6 +122,10 @@ export interface PaymentCreateRequest {
   cargo_id?: number
   reservation_id?: number
   paid_by?: number
+  bank_name?: string
+  bank_account?: string
+  payment_method?: string
+  reference_number?: string
 }
 
 export interface CompanyCreateRequest {
@@ -227,4 +231,67 @@ export interface RouteResponse {
   ship_current_coords?: { lat: number; lng: number }
   waypoints: { lat: number; lng: number; order: number }[]
   status: string
+}
+
+export interface ParkingZoneCreateRequest {
+  name: string
+  port?: string
+  manager_id?: number
+  capacity: number
+  latitude?: number
+  longitude?: number
+}
+
+export interface ParkingZoneUpdateRequest {
+  name?: string
+  port?: string
+  manager_id?: number
+  status?: string
+  capacity?: number
+}
+
+export interface ParkingSpotAssignRequest {
+  driver_id: number
+  tariff_per_hour?: number
+}
+
+export interface DealCreateRequest {
+  type: 'cargo_transport' | 'parking_rental' | 'berth_rental'
+  client_id: number
+  driver_id?: number
+  captain_id?: number
+  cargo_id?: number
+  proposed_price?: number
+  currency?: string
+  notes?: string
+}
+
+export interface DealUpdateRequest {
+  proposed_price?: number
+  notes?: string
+}
+
+export interface TrafficOverview {
+  cargo: {
+    total: number
+    in_transit: number
+    waiting_for_assignment: number
+  }
+  berths: {
+    total: number
+    occupied: number
+    free: number
+    utilization_pct: number
+  }
+  parking: {
+    total_zones: number
+    total_spots: number
+    occupied_spots: number
+    free_spots: number
+    utilization_pct: number
+  }
+  queue: {
+    waiting: number
+    avg_wait_hours: number
+  }
 }

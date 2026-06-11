@@ -12,6 +12,10 @@ class PaymentCreate(BaseModel):
     cargo_id: int | None = None
     reservation_id: int | None = None
     paid_by: int | None = None
+    bank_name: str | None = None
+    bank_account: str | None = None
+    payment_method: str | None = None
+    reference_number: str | None = None
 
 
 class PaymentResponse(BaseModel):
@@ -25,6 +29,10 @@ class PaymentResponse(BaseModel):
     status: PaymentStatus
     created_at: datetime
     paid_at: datetime | None
+    bank_name: str | None = None
+    bank_account: str | None = None
+    payment_method: str | None = None
+    reference_number: str | None = None
 
     model_config = {"from_attributes": True}
 

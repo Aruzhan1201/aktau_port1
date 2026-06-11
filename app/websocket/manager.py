@@ -125,5 +125,58 @@ class ConnectionManager:
                 self.cargo_subscribers[cargo_id] = set()
             self.cargo_subscribers[cargo_id].add(user_id)
 
+    # New broadcast methods
+    async def broadcast_weather_alert(self, port: str, message: dict):
+        data = json.dumps(message, default=str)
+        async with self._lock:
+            all_users = list(self.active_connections.items())
+        dead = []
+        for user_id, conns in all_users:
+            for ws in conns[:]:
+                try:
+                    await ws.send_text(data)
+                except Exception:
+                    dead.append((user_id, ws))
+        await self._remove_dead(dead)
+
+    async def broadcast_incident_update(self, incident_id: int, message: dict):
+        data = json.dumps(message, default=str)
+        async with self._lock:
+            all_users = list(self.active_connections.items())
+        dead = []
+        for user_id, conns in all_users:
+            for ws in conns[:]:
+                try:
+                    await ws.send_text(data)
+                except Exception:
+                    dead.append((user_id, ws))
+        await self._remove_dead(dead)
+
+    async def broadcast_ro_ro_update(self, vehicle_id: int, message: dict):
+        data = json.dumps(message, default=str)
+        async with self._lock:
+            all_users = list(self.active_connections.items())
+        dead = []
+        for user_id, conns in all_users:
+            for ws in conns[:]:
+                try:
+                    await ws.send_text(data)
+                except Exception:
+                    dead.append((user_id, ws))
+        await self._remove_dead(dead)
+
+    async def broadcast_berth_status(self, berth_id: int, message: dict):
+        data = json.dumps(message, default=str)
+        async with self._lock:
+            all_users = list(self.active_connections.items())
+        dead = []
+        for user_id, conns in all_users:
+            for ws in conns[:]:
+                try:
+                    await ws.send_text(data)
+                except Exception:
+                    dead.append((user_id, ws))
+        await self._remove_dead(dead)
+
 
 manager = ConnectionManager()

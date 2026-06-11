@@ -24,6 +24,13 @@ async def create_cargo(
     ai_generated: bool = False,
     ai_confidence: float | None = None,
     ai_raw_input: str | None = None,
+    sender_name: str | None = None,
+    sender_phone: str | None = None,
+    receiver_name: str | None = None,
+    receiver_phone: str | None = None,
+    route_waypoints: list[dict] | None = None,
+    vehicle_type: str | None = None,
+    budget: float | None = None,
 ) -> Cargo:
     cargo = Cargo(
         client_id=client_id,
@@ -37,6 +44,13 @@ async def create_cargo(
         ai_generated=ai_generated,
         ai_confidence=ai_confidence,
         ai_raw_input=ai_raw_input,
+        sender_name=sender_name,
+        sender_phone=sender_phone,
+        receiver_name=receiver_name,
+        receiver_phone=receiver_phone,
+        route_waypoints=route_waypoints,
+        vehicle_type=vehicle_type,
+        budget=budget,
     )
     session.add(cargo)
     await session.flush()
@@ -53,6 +67,7 @@ async def get_cargo(session: AsyncSession, cargo_id: int) -> Cargo | None:
 async def list_cargoes(
     session: AsyncSession,
     client_id: int | None = None,
+    driver_id: int | None = None,
     status: CargoStatus | None = None,
     ship_id: int | None = None,
     skip: int = 0,
@@ -63,6 +78,9 @@ async def list_cargoes(
     if client_id is not None:
         query = query.where(Cargo.client_id == client_id)
         count_query = count_query.where(Cargo.client_id == client_id)
+    if driver_id is not None:
+        query = query.where(Cargo.driver_id == driver_id)
+        count_query = count_query.where(Cargo.driver_id == driver_id)
     if status is not None:
         query = query.where(Cargo.status == status)
         count_query = count_query.where(Cargo.status == status)

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { usePayments, useRevenue, useCreatePayment, useMarkPaymentPaid } from '@/hooks/useEntities'
+import { useAuthStore } from '@/store/authStore'
 import { PageHeader } from '@/components/common/PageHeader'
 import { DataTable } from '@/components/common/DataTable'
 import { PaymentBadge } from '@/components/ui/badge'
@@ -28,12 +29,14 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 }
 
 export function PaymentsPage() {
+  const user = useAuthStore((s) => s.user)
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
   const { data, isLoading } = usePayments()
   const { data: revenue } = useRevenue()
   const create = useCreatePayment()
   const markPaid = useMarkPaymentPaid()
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ type: 'cargo_fee', amount: '', cargo_id: '', reservation_id: '' })
+  const [form, setForm] = useState({ type: 'cargo_fee', amount: '', cargo_id: '', reservation_id: '', bank_name: '', bank_account: '', payment_method: '', reference_number: '' })
 
   const columns = [
     { key: 'id', header: 'ID', render: (p: Payment) => <span className="font-mono text-xs text-slate-400">#{p.id}</span> },
@@ -42,6 +45,15 @@ export function PaymentsPage() {
     )},
     { key: 'amount', header: 'Amount', render: (p: Payment) => <span className="font-semibold text-slate-900">{formatCurrency(p.amount, p.currency)}</span> },
     { key: 'status', header: 'Status', render: (p: Payment) => <PaymentBadge status={p.status} /> },
+    { key: 'bank', header: 'Bank', render: (p: Payment) => (
+      <span className="text-slate-600 text-sm">{p.bank_name || '—'}</span>
+    )},
+    { key: 'payment_method', header: 'Method', render: (p: Payment) => (
+      <span className="text-slate-500 text-xs capitalize">{p.payment_method?.replace('_', ' ') || '—'}</span>
+    )},
+    { key: 'reference', header: 'Reference', render: (p: Payment) => (
+      <span className="font-mono text-xs text-slate-400">{p.reference_number || '—'}</span>
+    )},
     { key: 'created', header: 'Created', render: (p: Payment) => <span className="text-slate-500">{formatDate(p.created_at)}</span> },
     { key: 'actions', header: '', className: 'text-right', render: (p: Payment) =>
       p.status === 'pending' ? (
@@ -59,9 +71,13 @@ export function PaymentsPage() {
       amount: Number(form.amount),
       cargo_id: form.cargo_id ? Number(form.cargo_id) : undefined,
       reservation_id: form.reservation_id ? Number(form.reservation_id) : undefined,
+      bank_name: form.bank_name || undefined,
+      bank_account: form.bank_account || undefined,
+      payment_method: form.payment_method || undefined,
+      reference_number: form.reference_number || undefined,
     })
     setShowForm(false)
-    setForm({ type: 'cargo_fee', amount: '', cargo_id: '', reservation_id: '' })
+    setForm({ type: 'cargo_fee', amount: '', cargo_id: '', reservation_id: '', bank_name: '', bank_account: '', payment_method: '', reference_number: '' })
   }
 
   const revenueData = revenue
@@ -82,15 +98,17 @@ export function PaymentsPage() {
     <div className="animate-fade-in">
       <PageHeader
         title="Payments"
-        description="Transaction ledger"
+        description={isAdmin ? "Transaction ledger" : "Your payments"}
         actions={
-          <Button onClick={() => setShowForm(!showForm)} size="sm">
-            {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            {showForm ? 'Cancel' : 'New Payment'}
-          </Button>
+          isAdmin ? (
+            <Button onClick={() => setShowForm(!showForm)} size="sm">
+              {showForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+              {showForm ? 'Cancel' : 'New Payment'}
+            </Button>
+          ) : undefined
         }
       />
-      {kpiCards.length > 0 && (
+      {isAdmin && kpiCards.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {kpiCards.map((kpi) => {
             const Icon = kpi.icon
@@ -108,7 +126,7 @@ export function PaymentsPage() {
           })}
         </div>
       )}
-      {revenueData.length > 0 && (
+      {isAdmin && revenueData.length > 0 && (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm mb-6">
           <div className="flex items-center gap-2 mb-4">
             <CreditCard className="w-4 h-4 text-slate-400" />
@@ -124,15 +142,15 @@ export function PaymentsPage() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <YAxis dataKey="value" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
               <Tooltip content={<ChartTooltip />} />
               <Bar dataKey="value" fill="url(#revenueGrad)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
-      {showForm && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-slate-200 bg-white p-5 mb-4 max-w-md shadow-sm animate-slide-up">
+      {isAdmin && showForm && (
+        <form onSubmit={handleCreate} className="rounded-xl border border-slate-200 bg-white p-5 mb-4 max-w-lg shadow-sm animate-slide-up">
           <div className="flex items-center gap-2 mb-4">
             <Plus className="w-4 h-4 text-slate-400" />
             <h3 className="text-sm font-semibold text-slate-700">Create Payment</h3>
@@ -140,6 +158,10 @@ export function PaymentsPage() {
           <div className="space-y-3">
             <Select id="type" label="Payment Type" options={paymentTypeOptions} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} />
             <Input id="amount" label="Amount" type="number" min="0" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
+            <Input id="bank_name" label="Bank Name" value={form.bank_name} onChange={(e) => setForm({ ...form, bank_name: e.target.value })} placeholder="e.g. Halyk Bank" />
+            <Input id="bank_account" label="Bank Account" value={form.bank_account} onChange={(e) => setForm({ ...form, bank_account: e.target.value })} placeholder="e.g. KZ1234567890" />
+            <Select id="payment_method" label="Payment Method" options={[{ value: 'bank_transfer', label: 'Bank Transfer' }, { value: 'card', label: 'Card' }, { value: 'cash', label: 'Cash' }]} value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })} />
+            <Input id="reference_number" label="Reference Number" value={form.reference_number} onChange={(e) => setForm({ ...form, reference_number: e.target.value })} placeholder="e.g. INV-2024-001" />
             <Input id="cargo_id" label="Cargo ID (optional)" type="number" value={form.cargo_id} onChange={(e) => setForm({ ...form, cargo_id: e.target.value })} />
             <Input id="reservation_id" label="Reservation ID (optional)" type="number" value={form.reservation_id} onChange={(e) => setForm({ ...form, reservation_id: e.target.value })} />
           </div>

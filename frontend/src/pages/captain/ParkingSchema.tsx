@@ -1,18 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useBerthList } from '@/hooks/useBerth'
 import { useShipList } from '@/hooks/useShip'
 import { useAuthStore } from '@/store/authStore'
-import { useDealStore, tariffPlans } from '@/store/dealStore'
-import { useChatStore } from '@/store/chatStore'
+import { api } from '@/api/client'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { formatCurrency } from '@/lib/utils'
-import { Anchor, Ship, DollarSign, Clock, CheckCircle2, X, MessageCircle, Phone, Building2, Sparkles } from 'lucide-react'
+import { Anchor, CheckCircle2, X } from 'lucide-react'
 import type { Berth, TariffPlan } from '@/types'
-
 const TARIFFS: TariffPlan[] = [
   { id: 'economy', name: 'Economy', description: 'Basic berth access', pricePerHour: 50, features: ['Standard mooring', 'Basic utilities', '24/7 security'] },
   { id: 'standard', name: 'Standard', description: 'Full service berth', pricePerHour: 120, features: ['Priority mooring', 'Water & electricity', 'Waste disposal', '24/7 security', 'Crane access'] },
@@ -20,18 +18,15 @@ const TARIFFS: TariffPlan[] = [
 ]
 
 export function ParkingSchema() {
+  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const { data: berths, isLoading } = useBerthList()
   const { data: ships } = useShipList()
-  const createDeal = useDealStore((s) => s.createDeal)
   const myShip = ships?.items?.find((s) => s.captain_id === user?.id)
   const [selectedBerth, setSelectedBerth] = useState<Berth | null>(null)
   const [selectedTariff, setSelectedTariff] = useState<string>('standard')
   const [hours, setHours] = useState(24)
   const [bookingStep, setBookingStep] = useState<'select' | 'tariff' | 'review' | 'done'>('select')
-  const [parkingManagers] = useState([
-    { id: 999, name: 'Port Management', role: 'parking_manager' as const },
-  ])
 
   const tariff = TARIFFS.find((t) => t.id === selectedTariff)!
   const totalCost = tariff ? tariff.pricePerHour * hours : 0
@@ -41,27 +36,22 @@ export function ParkingSchema() {
     setBookingStep('tariff')
   }
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     if (!selectedBerth || !user || !myShip) return
-    const arrival = new Date()
-    const departure = new Date(arrival.getTime() + hours * 3600000)
-
-    createDeal({
-      type: 'berth_booking',
-      title: `Berth ${selectedBerth.name} — ${tariff.name}`,
-      description: `${hours}h booking, ${formatCurrency(totalCost)}`,
-      initiatorId: user.id,
-      targetId: parkingManagers[0].id,
-      status: 'pending',
-      berthId: selectedBerth.id,
-      shipId: myShip.id,
-      amount: totalCost,
-      currency: 'USD',
-      tariffName: tariff.name,
-      tariffDescription: tariff.description,
-    })
-
-    setBookingStep('done')
+    try {
+      await api.post('/deals/', {
+        type: 'berth_rental',
+        client_id: user.id,
+        captain_id: user.id,
+        cargo_id: null,
+        proposed_price: totalCost,
+        currency: 'USD',
+        notes: `Berth ${selectedBerth.name} — ${tariff.name}, ${hours}h`,
+      })
+      setBookingStep('done')
+    } catch {
+      setBookingStep('select')
+    }
   }
 
   const berthColor = (status: string) => {
@@ -130,7 +120,7 @@ export function ParkingSchema() {
                     <p>Capacity: {berth.capacity.toLocaleString()}t</p>
                     {berth.location_coords && (
                       <p className="text-slate-400 font-mono">
-                        {berth.location_coords.latitude.toFixed(3)}, {berth.location_coords.longitude.toFixed(3)}
+                        {berth.location_coords.lat.toFixed(3)}, {berth.location_coords.lng.toFixed(3)}
                       </p>
                     )}
                   </div>
@@ -251,7 +241,7 @@ export function ParkingSchema() {
               <Button onClick={() => { setSelectedBerth(null); setBookingStep('select') }}>
                 Done
               </Button>
-              <Button variant="outline" onClick={() => window.location.href = '/captain/deals'}>
+              <Button variant="outline" onClick={() => navigate('/deals')}>
                 View Deals
               </Button>
             </div>

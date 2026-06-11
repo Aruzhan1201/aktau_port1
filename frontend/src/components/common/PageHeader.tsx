@@ -4,9 +4,10 @@ interface PageHeaderProps {
   title: string
   description?: string
   actions?: ReactNode
+  children?: ReactNode
 }
 
-export function PageHeader({ title, description, actions }: PageHeaderProps) {
+export function PageHeader({ title, description, actions, children }: PageHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 animate-fade-in">
       <div className="min-w-0">
@@ -17,7 +18,7 @@ export function PageHeader({ title, description, actions }: PageHeaderProps) {
           <p className="text-sm text-slate-500 mt-0.5">{description}</p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-3 shrink-0">{actions}</div>}
+      {(actions || children) && <div className="flex items-center gap-3 shrink-0">{actions || children}</div>}
     </div>
   )
 }

@@ -21,14 +21,17 @@ router = APIRouter(prefix="/ship", tags=["Ships"])
 async def create_ship(
     body: ShipCreate,
     session: AsyncSession = Depends(get_session),
-    _: User = Depends(RoleChecker(UserRole.admin)),
+    current_user: User = Depends(RoleChecker(UserRole.admin, UserRole.captain)),
 ):
+    captain_id = body.captain_id
+    if current_user.role == UserRole.captain:
+        captain_id = current_user.id
     ship = await ship_service.create_ship(
         session=session,
         name=body.name,
         capacity=body.capacity,
         imo_number=body.imo_number,
-        captain_id=body.captain_id,
+        captain_id=captain_id,
     )
     return ship
 
