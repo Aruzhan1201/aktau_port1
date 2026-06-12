@@ -15,8 +15,8 @@ export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
 
   if (isAuthLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+      <div className="flex min-h-screen items-center justify-center bg-heritage-cream">
+        <div className="animate-spin h-8 w-8 border-4 border-silk-gold border-t-transparent rounded-full" />
       </div>
     )
   }

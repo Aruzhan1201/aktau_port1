@@ -23,26 +23,27 @@ export function Input({
       {label && (
         <label
           htmlFor={id}
-          className="block text-sm font-medium text-slate-700"
+          className="block text-sm font-medium text-kazakh-burgundy dark:text-silk-gold"
         >
           {label}
         </label>
       )}
       <div className="relative">
         {icon && (
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-modern-slate dark:text-warm-sand">
             {icon}
           </div>
         )}
         <input
           id={id}
           className={cn(
-            'block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900',
-            'placeholder:text-slate-400',
+            'block w-full rounded-lg border border-silk-gold/40 px-3 py-2 text-sm text-kazakh-burgundy dark:text-heritage-cream',
+            'placeholder:text-modern-slate dark:placeholder:text-warm-sand/50',
             'shadow-sm transition-all duration-200 ease-in-out',
-            'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500',
+            'bg-heritage-cream dark:bg-kazakh-burgundy-dark',
+            'focus:outline-none focus:ring-2 focus:ring-silk-gold/40 focus:border-silk-gold',
             error &&
-              'border-red-300 focus:ring-red-500/20 focus:border-red-500',
+              'border-status-cancelled focus:ring-status-cancelled/20 focus:border-status-cancelled',
             icon ? 'pl-10' : undefined,
             className,
           )}
@@ -51,13 +52,13 @@ export function Input({
         />
       </div>
       {error && (
-        <p className="flex items-center gap-1 text-xs text-red-500" role="alert">
+        <p className="flex items-center gap-1 text-xs text-status-cancelled" role="alert">
           <AlertCircle className="h-3 w-3" />
           {error}
         </p>
       )}
       {helperText && !error && (
-        <p className="text-xs text-slate-400">{helperText}</p>
+        <p className="text-xs text-modern-slate dark:text-warm-sand">{helperText}</p>
       )}
     </div>
   )

@@ -45,17 +45,8 @@ export function DotBadge({ className }: { className?: string }) {
 }
 
 export function StatusBadge({ status }: { status: CargoStatus }) {
-  const isSoft = statusColorMap[status]?.startsWith('bg-slate')
   return (
-    <Badge
-      className={cn(
-        'gap-1.5',
-        isSoft
-          ? statusColorMap[status]
-          : `${statusColorMap[status]} text-white`,
-      )}
-    >
-      {!isSoft && <DotBadge className={statusColorMap[status]} />}
+    <Badge className={statusColorMap[status]}>
       {statusLabelMap[status]}
     </Badge>
   )
