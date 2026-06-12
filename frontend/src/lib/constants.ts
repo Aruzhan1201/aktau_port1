@@ -62,5 +62,4 @@ export const ROUTES = {
   GOVERNANCE_TRAFFIC: '/government/traffic',
   GOVERNANCE_DOCUMENTS: '/government/documents',
   CLIENT_DASHBOARD: '/client',
-  CHAT: '/chat',
 } as const

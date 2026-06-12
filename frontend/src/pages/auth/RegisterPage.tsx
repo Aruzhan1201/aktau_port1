@@ -38,18 +38,18 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-heritage-cream">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-kazakh-burgundy via-kazakh-burgundy-dark to-modern-slate items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen flex bg-slate-50">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-72 h-72 bg-silk-gold rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-caspian-teal rounded-full blur-3xl" />
+          <div className="absolute top-20 right-20 w-72 h-72 bg-blue-500 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-cyan-500 rounded-full blur-3xl" />
         </div>
         <div className="relative text-center px-12">
-          <div className="w-16 h-16 rounded-2xl bg-silk-gold/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-6 border border-silk-gold/30">
-            <Anchor className="w-8 h-8 text-silk-gold" />
+          <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-6 border border-white/20">
+            <Anchor className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-heritage-cream mb-3 tracking-tight font-serif">Join Aktau Port</h1>
-          <p className="text-warm-sand/70 max-w-sm mx-auto text-sm leading-relaxed font-sans">
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">Join Aktau Port</h1>
+          <p className="text-blue-200/70 max-w-sm mx-auto text-sm leading-relaxed">
             Create your account to start managing cargo, coordinating berths, and tracking shipments in real time.
           </p>
         </div>
@@ -57,13 +57,13 @@ export function RegisterPage() {
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md animate-slide-up">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-kazakh-burgundy font-serif">Create your account</h1>
-            <p className="text-modern-slate mt-1 text-sm font-sans">Register for Aktau Port Logistics</p>
+            <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
+            <p className="text-slate-500 mt-1 text-sm">Register for Aktau Port Logistics</p>
           </div>
-          <form onSubmit={handleSubmit} className="bg-white dark:bg-kazakh-burgundy-dark rounded-2xl border border-silk-gold/30 shadow-sm p-8 space-y-5">
+          <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-5">
             {error && (
-              <div className="bg-status-cancelled/10 text-status-cancelled text-sm px-4 py-2.5 rounded-lg border border-status-cancelled/30 flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-status-cancelled shrink-0" />
+              <div className="bg-red-50 text-red-600 text-sm px-4 py-2.5 rounded-lg border border-red-200 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
                 {error}
               </div>
             )}
@@ -74,7 +74,7 @@ export function RegisterPage() {
               <Input id="password" label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 8 characters" required minLength={8} className="col-span-2" />
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-kazakh-burgundy dark:text-silk-gold">Role</label>
+              <label className="block text-sm font-medium text-slate-700">Role</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {roles.map((r) => {
                   const Icon = r.icon
@@ -86,15 +86,15 @@ export function RegisterPage() {
                       onClick={() => setRole(r.value)}
                       className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-left transition-all duration-200 ${
                         selected
-                          ? 'border-silk-gold bg-silk-gold/20 shadow-sm'
-                          : 'border-silk-gold/30 bg-white dark:bg-kazakh-burgundy-dark hover:border-silk-gold/50 hover:bg-silk-gold/10'
+                          ? 'border-blue-500 bg-blue-50/50 shadow-sm'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                       }`}
                     >
-                      <Icon className={`w-5 h-5 ${selected ? 'text-silk-gold-dark' : 'text-modern-slate dark:text-warm-sand'}`} />
-                      <span className={`text-xs font-semibold ${selected ? 'text-kazakh-burgundy dark:text-silk-gold' : 'text-modern-slate dark:text-warm-sand'}`}>
+                      <Icon className={`w-5 h-5 ${selected ? 'text-blue-600' : 'text-slate-400'}`} />
+                      <span className={`text-xs font-semibold ${selected ? 'text-blue-700' : 'text-slate-700'}`}>
                         {r.label}
                       </span>
-                      <span className={`text-[10px] text-center leading-tight ${selected ? 'text-kazakh-burgundy dark:text-silk-gold' : 'text-modern-slate dark:text-warm-sand/70'}`}>
+                      <span className={`text-[10px] text-center leading-tight ${selected ? 'text-blue-500' : 'text-slate-400'}`}>
                         {r.description}
                       </span>
                     </button>
@@ -105,9 +105,9 @@ export function RegisterPage() {
             <Button type="submit" className="w-full" size="lg">
               Create Account
             </Button>
-            <p className="text-sm text-center text-modern-slate dark:text-warm-sand font-sans">
+            <p className="text-sm text-center text-slate-500">
               Already have an account?{' '}
-              <Link to={ROUTES.LOGIN} className="text-silk-gold-dark hover:text-kazakh-burgundy dark:hover:text-silk-gold font-medium">
+              <Link to={ROUTES.LOGIN} className="text-blue-600 hover:text-blue-700 font-medium">
                 Sign in
               </Link>
             </p>

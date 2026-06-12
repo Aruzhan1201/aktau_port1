@@ -1,5 +1,5 @@
 import { useUiStore } from '@/store/uiStore'
-import { X, Anchor } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export function NotificationToast() {
@@ -27,20 +27,17 @@ function ToastItem({ id, title, message, onDismiss }: { id: string; title: strin
 
   return (
     <div
-      className={`bg-white dark:bg-kazakh-burgundy-dark border border-silk-gold/30 rounded-xl shadow-lg p-4 transition-all duration-300 ${
+      className={`bg-white border border-slate-200 rounded-xl shadow-lg p-4 transition-all duration-300 ${
         visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Anchor className="w-3.5 h-3.5 text-silk-gold shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-kazakh-burgundy dark:text-silk-gold truncate">{title}</p>
-            <p className="text-xs text-modern-slate dark:text-warm-sand mt-0.5 line-clamp-2">{message}</p>
-          </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-800 truncate">{title}</p>
+          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{message}</p>
         </div>
-        <button onClick={() => onDismiss(id)} className="shrink-0 p-0.5 rounded hover:bg-silk-gold/20 transition-colors">
-          <X className="w-3.5 h-3.5 text-modern-slate dark:text-warm-sand" />
+        <button onClick={() => onDismiss(id)} className="shrink-0 p-0.5 rounded hover:bg-slate-100 transition-colors">
+          <X className="w-3.5 h-3.5 text-slate-400" />
         </button>
       </div>
     </div>

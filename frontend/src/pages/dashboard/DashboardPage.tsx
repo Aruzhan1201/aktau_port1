@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useDashboard } from '@/hooks/useEntities'
 import { PageHeader } from '@/components/common/PageHeader'
-import { StatCard } from '@/components/cards/StatCard'
 import { SkeletonCard } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { ReportIncidentModal } from '@/components/incidents/ReportIncidentModal'
 import { formatCurrency, formatDuration } from '@/lib/utils'
-import { Package, DollarSign, Anchor, Clock, AlertTriangle } from 'lucide-react'
+import { Package, DollarSign, Anchor, Clock, AlertTriangle, Plus, X } from 'lucide-react'
 import {
   BarChart,
   Bar,
@@ -20,54 +18,104 @@ import {
   Cell,
 } from 'recharts'
 import type { PieLabelRenderProps } from 'recharts'
+import { useCreateIncident } from '@/hooks/useIncidents'
 
-const CHART_COLORS = ['#6B3C3C', '#D4A574', '#2B7A78', '#27AE60', '#B87333', '#E8D7C3', '#4A2A2A', '#1B5A58']
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#f97316', '#8b5cf6', '#06b6d4', '#22c55e', '#ef4444']
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
   if (!active || !payload) return null
   return (
-    <div className="bg-white dark:bg-modern-slate rounded-lg border border-silk-gold/30 shadow-md px-3 py-2 text-sm">
-      <p className="font-medium text-kazakh-burgundy dark:text-silk-gold">{label}</p>
-      <p className="text-modern-slate dark:text-warm-sand">{payload[0]?.value}</p>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-md px-3 py-2 text-sm">
+      <p className="font-medium text-slate-900">{label}</p>
+      <p className="text-slate-600">{payload[0]?.value}</p>
     </div>
   )
 }
 
-function PieTooltip({ active, payload }: { active?: boolean; payload?: { name: string; value: number }[] }) {
+function CustomPieTooltip({ active, payload }: { active?: boolean; payload?: { name: string; value: number }[] }) {
   if (!active || !payload) return null
   return (
-    <div className="bg-white dark:bg-modern-slate rounded-lg border border-silk-gold/30 shadow-md px-3 py-2 text-sm">
-      <p className="font-medium text-kazakh-burgundy dark:text-silk-gold">{payload[0]?.name}</p>
-      <p className="text-modern-slate dark:text-warm-sand">{formatCurrency(payload[0]?.value)}</p>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-md px-3 py-2 text-sm">
+      <p className="font-medium text-slate-900">{payload[0]?.name}</p>
+      <p className="text-slate-600">{formatCurrency(payload[0]?.value)}</p>
     </div>
   )
 }
+
+  const kpis = [
+    { key: 'total_cargoes' as const, label: 'Total Cargo', icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { key: 'total_income' as const, label: 'Revenue', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { key: 'berth_utilization_pct' as const, label: 'Berth Utilization', icon: Anchor, color: 'text-amber-600', bg: 'bg-amber-50', suffix: '%' },
+    { key: 'average_waiting_time_hours' as const, label: 'Avg Wait Time', icon: Clock, color: 'text-violet-600', bg: 'bg-violet-50', fmt: formatDuration },
+  ]
 
 export function DashboardPage() {
   const { data, isLoading } = useDashboard()
+  const createIncident = useCreateIncident()
   const [showIncidentForm, setShowIncidentForm] = useState(false)
+  const [incidentForm, setIncidentForm] = useState({ port: 'aktau', incident_type: '', severity: 'medium', description: '' })
 
-  const kpis = [
-    { key: 'total_cargoes' as const, label: 'Total Cargo', icon: Package, iconColor: 'bg-caspian-teal/20 text-caspian-teal' },
-    { key: 'total_income' as const, label: 'Revenue', icon: DollarSign, iconColor: 'bg-emerald-prosperity/20 text-emerald-prosperity' },
-    { key: 'berth_utilization_pct' as const, label: 'Berth Utilization', icon: Anchor, iconColor: 'bg-silk-gold/20 text-silk-gold-dark', suffix: '%' },
-    { key: 'average_waiting_time_hours' as const, label: 'Avg Wait Time', icon: Clock, iconColor: 'bg-merchant-copper/20 text-merchant-copper', fmt: formatDuration },
-  ]
+  const handleCreateIncident = () => {
+    createIncident.mutate(incidentForm, {
+      onSuccess: () => {
+        setShowIncidentForm(false)
+        setIncidentForm({ port: 'aktau', incident_type: '', severity: 'medium', description: '' })
+      },
+    })
+  }
 
   if (isLoading) {
     return (
-      <div className="animate-fade-in">
-        <PageHeader title="Dashboard" description="Port operations overview" />
+      <div>
+        <PageHeader
+          title="Dashboard"
+          description="Port operations overview"
+          actions={
+            <Button size="sm" onClick={() => setShowIncidentForm(true)}>
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Report Incident
+            </Button>
+          }
+        />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="rounded-xl border border-silk-gold/30 bg-white dark:bg-modern-slate/20 p-5 h-72 animate-pulse" />
-          <div className="rounded-xl border border-silk-gold/30 bg-white dark:bg-modern-slate/20 p-5 h-72 animate-pulse" />
+          <div className="rounded-xl border border-slate-200 bg-white p-5 h-72 animate-pulse" />
+          <div className="rounded-xl border border-slate-200 bg-white p-5 h-72 animate-pulse" />
         </div>
-      </div>
-    )
-  }
+      {/* Incident Report Modal */}
+      {showIncidentForm && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowIncidentForm(false)}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-lg">Report Incident</h3>
+              <button onClick={() => setShowIncidentForm(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-3">
+              <select value={incidentForm.port} onChange={(e) => setIncidentForm({ ...incidentForm, port: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="aktau">Aktau</option><option value="kuryk">Kuryk</option>
+              </select>
+              <input placeholder="Incident type" value={incidentForm.incident_type} onChange={(e) => setIncidentForm({ ...incidentForm, incident_type: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+              <select value={incidentForm.severity} onChange={(e) => setIncidentForm({ ...incidentForm, severity: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option>
+              </select>
+              <textarea placeholder="Description" value={incidentForm.description} onChange={(e) => setIncidentForm({ ...incidentForm, description: e.target.value })} rows={3}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
+              <button onClick={handleCreateIncident} disabled={!incidentForm.incident_type || !incidentForm.description}
+                className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium">
+                Submit Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
   const statusData = data?.cargoes_by_status
     ? Object.entries(data.cargoes_by_status).map(([name, value]) => ({ name, value }))
@@ -82,8 +130,13 @@ export function DashboardPage() {
       <PageHeader
         title="Dashboard"
         description="Port operations overview"
+        actions={
+          <Button size="sm" onClick={() => setShowIncidentForm(true)}>
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Report Incident
+          </Button>
+        }
       />
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {kpis.map((kpi) => {
           const Icon = kpi.icon
@@ -93,34 +146,54 @@ export function DashboardPage() {
             value = kpi.fmt ? kpi.fmt(raw as number) : kpi.suffix ? `${raw}${kpi.suffix}` : (raw?.toString() ?? '—')
           }
           return (
-            <StatCard key={kpi.key} label={kpi.label} value={value} icon={Icon} iconColor={kpi.iconColor} />
+            <div
+              key={kpi.key}
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  {kpi.label}
+                </p>
+                <div className={`w-8 h-8 rounded-lg ${kpi.bg} flex items-center justify-center`}>
+                  <Icon className={`w-4 h-4 ${kpi.color}`} />
+                </div>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{value}</p>
+            </div>
           )
         })}
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="pattern-border-diamond rounded-xl border border-silk-gold/30 bg-white dark:bg-modern-slate/20 p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-kazakh-burgundy dark:text-silk-gold mb-4 font-serif">Cargoes by Status</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-slate-700 mb-4">Cargoes by Status</h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={statusData}>
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6B3C3C" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#D4A574" stopOpacity={0.4} />
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.4} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E8D7C3" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#5A6A7C' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#5A6A7C' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="value" fill="url(#barGradient)" radius={[4, 4, 0, 0]} animationBegin={100} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="pattern-border-diamond rounded-xl border border-silk-gold/30 bg-white dark:bg-modern-slate/20 p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-kazakh-burgundy dark:text-silk-gold mb-4 font-serif">Revenue by Type</h3>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-slate-700 mb-4">Revenue by Type</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
+              <defs>
+                {COLORS.map((color, idx) => (
+                  <linearGradient key={idx} id={`pieGrad${idx}`} x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={0.9} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0.5} />
+                  </linearGradient>
+                ))}
+              </defs>
               <Pie
                 data={incomeData}
                 dataKey="value"
@@ -134,10 +207,10 @@ export function DashboardPage() {
                 animationBegin={200}
               >
                 {incomeData.map((_, idx) => (
-                  <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} stroke="none" />
+                  <Cell key={idx} fill={`url(#pieGrad${idx})`} stroke="none" />
                 ))}
               </Pie>
-              <Tooltip content={<PieTooltip />} />
+              <Tooltip content={<CustomPieTooltip />} />
             </PieChart>
           </ResponsiveContainer>
         </div>

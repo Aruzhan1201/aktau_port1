@@ -4,10 +4,10 @@ import { ParkingCircle } from 'lucide-react'
 import type { ParkingSpot } from '@/types'
 
 const statusColors: Record<string, { bg: string; border: string; text: string; label: string }> = {
-  free: { bg: 'bg-emerald-prosperity/10', border: 'border-emerald-prosperity/40', text: 'text-emerald-prosperity', label: 'Free' },
-  reserved: { bg: 'bg-silk-gold/20', border: 'border-silk-gold/50', text: 'text-silk-gold-dark', label: 'Reserved' },
-  occupied: { bg: 'bg-status-cancelled/10', border: 'border-status-cancelled/40', text: 'text-status-cancelled', label: 'Occupied' },
-  maintenance: { bg: 'bg-modern-slate/10', border: 'border-modern-slate/30', text: 'text-modern-slate', label: 'Maintenance' },
+  free: { bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700', label: 'Free' },
+  reserved: { bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-700', label: 'Reserved' },
+  occupied: { bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-700', label: 'Occupied' },
+  maintenance: { bg: 'bg-gray-50', border: 'border-gray-300', text: 'text-gray-500', label: 'Maintenance' },
 }
 
 export function ParkingGrid() {
@@ -23,11 +23,11 @@ export function ParkingGrid() {
 
   if (isLoading) {
     return (
-      <div className="pattern-border-diamond rounded-xl border border-silk-gold/30 bg-white dark:bg-modern-slate/20 p-5 shadow-sm">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-silk-gold/30 rounded w-1/4" />
+          <div className="h-4 bg-slate-200 rounded w-1/4" />
           <div className="grid grid-cols-8 gap-2">
-            {Array.from({ length: 16 }).map((_, i) => <div key={i} className="h-10 bg-silk-gold/20 rounded" />)}
+            {Array.from({ length: 16 }).map((_, i) => <div key={i} className="h-10 bg-slate-100 rounded" />)}
           </div>
         </div>
       </div>
@@ -47,25 +47,25 @@ export function ParkingGrid() {
   }))
 
   return (
-    <div className="pattern-border-diamond rounded-xl border border-silk-gold/30 bg-white dark:bg-modern-slate/20 p-5 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <ParkingCircle className="w-4 h-4 text-silk-gold-dark" />
-          <h3 className="text-sm font-semibold text-kazakh-burgundy dark:text-silk-gold font-serif">Parking Spots</h3>
+          <ParkingCircle className="w-4 h-4 text-slate-400" />
+          <h3 className="text-sm font-semibold text-slate-700">Parking Spots</h3>
         </div>
-        <div className="flex items-center gap-3 text-xs text-modern-slate dark:text-warm-sand font-sans">
-          <span><span className="inline-block w-2 h-2 rounded-sm bg-emerald-prosperity mr-1" /> Free</span>
-          <span><span className="inline-block w-2 h-2 rounded-sm bg-silk-gold mr-1" /> Reserved</span>
-          <span><span className="inline-block w-2 h-2 rounded-sm bg-status-cancelled mr-1" /> Occupied</span>
-          <span><span className="inline-block w-2 h-2 rounded-sm bg-modern-slate/40 mr-1" /> Maint</span>
+        <div className="flex items-center gap-3 text-xs text-slate-400">
+          <span><span className="inline-block w-2 h-2 rounded-sm bg-green-400 mr-1" /> Free</span>
+          <span><span className="inline-block w-2 h-2 rounded-sm bg-yellow-400 mr-1" /> Reserved</span>
+          <span><span className="inline-block w-2 h-2 rounded-sm bg-red-400 mr-1" /> Occupied</span>
+          <span><span className="inline-block w-2 h-2 rounded-sm bg-gray-300 mr-1" /> Maint</span>
         </div>
       </div>
 
       {grouped.map((g) => (
         <div key={g.zone.id} className="mb-4 last:mb-0">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-modern-slate dark:text-warm-sand uppercase tracking-wider font-sans">{g.zone.name}</p>
-            <p className="text-xs text-modern-slate dark:text-warm-sand/70 font-sans">{g.free} free / {g.occupied} occupied</p>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">{g.zone.name}</p>
+            <p className="text-xs text-slate-400">{g.free} free / {g.occupied} occupied</p>
           </div>
           <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
             {g.spots.map((spot) => {
@@ -85,7 +85,7 @@ export function ParkingGrid() {
       ))}
 
       {grouped.length === 0 && (
-        <p className="text-xs text-modern-slate dark:text-warm-sand text-center py-4 font-sans">No parking zones configured.</p>
+        <p className="text-xs text-slate-400 text-center py-4">No parking zones configured.</p>
       )}
     </div>
   )

@@ -12,7 +12,7 @@ export function AppShell() {
       <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto bg-heritage-cream dark:bg-kazakh-burgundy/90 p-6">
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
           <Outlet />
         </main>
       </div>

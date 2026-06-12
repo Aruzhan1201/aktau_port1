@@ -23,7 +23,7 @@ export function Select({
       {label && (
         <label
           htmlFor={id}
-          className="block text-sm font-medium text-kazakh-burgundy dark:text-silk-gold"
+          className="block text-sm font-medium text-slate-700"
         >
           {label}
         </label>
@@ -32,10 +32,10 @@ export function Select({
         <select
           id={id}
           className={cn(
-            'block w-full rounded-lg border border-silk-gold/40 px-3 py-2 text-sm text-kazakh-burgundy dark:text-heritage-cream',
-            'shadow-sm transition-all duration-200 ease-in-out appearance-none bg-heritage-cream dark:bg-kazakh-burgundy-dark',
-            'focus:outline-none focus:ring-2 focus:ring-silk-gold/40 focus:border-silk-gold',
-            error && 'border-status-cancelled focus:ring-status-cancelled/20 focus:border-status-cancelled',
+            'block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900',
+            'shadow-sm transition-all duration-200 ease-in-out appearance-none bg-white',
+            'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500',
+            error && 'border-red-300 focus:ring-red-500/20 focus:border-red-500',
             className,
           )}
           aria-invalid={error ? 'true' : undefined}
@@ -52,10 +52,10 @@ export function Select({
             </option>
           ))}
         </select>
-        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-silk-gold pointer-events-none" />
+        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
       </div>
       {error && (
-        <p className="flex items-center gap-1 text-xs text-status-cancelled" role="alert">
+        <p className="flex items-center gap-1 text-xs text-red-500" role="alert">
           <AlertCircle className="h-3 w-3" />
           {error}
         </p>

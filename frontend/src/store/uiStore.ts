@@ -9,47 +9,19 @@ interface AppNotification {
 
 interface UiState {
   sidebarCollapsed: boolean
-  darkMode: boolean
   offline: boolean
   notifications: AppNotification[]
   toggleSidebar: () => void
-  toggleDarkMode: () => void
   setOffline: (val: boolean) => void
   addNotification: (title: string, message: string) => void
   dismissNotification: (id: string) => void
 }
 
-function getInitialDarkMode(): boolean {
-  try {
-    const stored = localStorage.getItem('darkMode')
-    if (stored !== null) return stored === 'true'
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-  } catch { return false }
-}
-
-function applyDarkMode(dark: boolean) {
-  try { localStorage.setItem('darkMode', String(dark)) } catch { /* noop */ }
-  document.documentElement.classList.toggle('dark', dark)
-}
-
-const initialDark = getInitialDarkMode()
-applyDarkMode(initialDark)
-
 export const useUiStore = create<UiState>((set) => ({
-  sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
-  darkMode: initialDark,
+  sidebarCollapsed: false,
   offline: false,
   notifications: [],
-  toggleSidebar: () => set((s) => {
-    const next = !s.sidebarCollapsed
-    try { localStorage.setItem('sidebarCollapsed', String(next)) } catch { /* noop */ }
-    return { sidebarCollapsed: next }
-  }),
-  toggleDarkMode: () => set((s) => {
-    const next = !s.darkMode
-    applyDarkMode(next)
-    return { darkMode: next }
-  }),
+  toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   setOffline: (val) => set({ offline: val }),
   addNotification: (title, message) => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`

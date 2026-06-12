@@ -122,8 +122,8 @@ export default function App() {
 
   if (isAuthLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-heritage-cream">
-        <div className="animate-spin h-8 w-8 border-4 border-silk-gold border-t-transparent rounded-full" />
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -248,12 +248,7 @@ export default function App() {
                   </ProtectedRoute>
                 } />
                 <Route path={ROUTES.CAPTAIN_CHAT} element={
-                  <ProtectedRoute roles={['captain', 'driver', 'parking_manager', 'port_manager', 'admin', 'super_admin', 'governance', 'client']}>
-                    <ChatPage />
-                  </ProtectedRoute>
-                } />
-                <Route path={ROUTES.CHAT} element={
-                  <ProtectedRoute roles={['client', 'captain', 'driver', 'parking_manager', 'port_manager', 'admin', 'super_admin', 'governance']}>
+                  <ProtectedRoute roles={['captain', 'driver', 'parking_manager', 'port_manager', 'admin', 'super_admin', 'governance']}>
                     <ChatPage />
                   </ProtectedRoute>
                 } />
