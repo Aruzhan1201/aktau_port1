@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import engine, Base
@@ -69,6 +70,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting %s", settings.APP_NAME)
     try:
         async with engine.begin() as conn:
+            await conn.execute(text("CREATE SCHEMA IF NOT EXISTS public"))
+            await conn.execute(text("SET search_path TO public"))
+
             tables_before = await conn.run_sync(
                 lambda sync_conn: [t for t in Base.metadata.tables.keys()]
             )
