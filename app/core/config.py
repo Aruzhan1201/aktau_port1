@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_WEBHOOK_URL: str = ""
 
-    CORS_ORIGINS: str = '["http://localhost:5173","http://localhost:3000"]'
+    CORS_ORIGINS: str = '["*"]'
 
     UPLOAD_DIR: str = "uploads/documents"
     MAX_UPLOAD_SIZE_MB: int = 10
