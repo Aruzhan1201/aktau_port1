@@ -15,7 +15,7 @@ async def get_queue(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     session: AsyncSession = Depends(get_session),
-    _: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin)),
+    _: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin, UserRole.super_admin)),
 ):
     items, total, waiting = await port_queue_service.get_queue(
         session, skip=skip, limit=limit
@@ -26,7 +26,7 @@ async def get_queue(
 @router.post("/process")
 async def process_queue(
     session: AsyncSession = Depends(get_session),
-    _: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin)),
+    _: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin, UserRole.super_admin)),
 ):
     result = await port_queue_service.process_next(session)
     if not result:

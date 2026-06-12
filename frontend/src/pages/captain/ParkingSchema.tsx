@@ -10,8 +10,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import { formatCurrency } from '@/lib/utils'
 import { Anchor, CheckCircle2, X } from 'lucide-react'
-import type { Berth, TariffPlan } from '@/types'
-const TARIFFS: TariffPlan[] = [
+import type { Berth } from '@/types'
+
+interface TariffOption {
+  id: string
+  name: string
+  description: string
+  pricePerHour: number
+  features: string[]
+}
+
+const TARIFFS: TariffOption[] = [
   { id: 'economy', name: 'Economy', description: 'Basic berth access', pricePerHour: 50, features: ['Standard mooring', 'Basic utilities', '24/7 security'] },
   { id: 'standard', name: 'Standard', description: 'Full service berth', pricePerHour: 120, features: ['Priority mooring', 'Water & electricity', 'Waste disposal', '24/7 security', 'Crane access'] },
   { id: 'premium', name: 'Premium', description: 'VIP berth with concierge', pricePerHour: 300, features: ['Guaranteed berth', 'All utilities', 'Catering service', 'Crane & forklift', 'Concierge service', 'Secure storage'] },

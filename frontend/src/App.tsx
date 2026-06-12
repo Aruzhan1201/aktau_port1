@@ -152,8 +152,16 @@ export default function App() {
                   </ProtectedRoute>
                 } />
                 <Route path={ROUTES.CARGO} element={<CargoListPage />} />
-                <Route path={ROUTES.CARGO_NEW} element={<CargoCreatePage />} />
-                <Route path={ROUTES.CARGO_AI_ORDER} element={<AIOrderPage />} />
+                <Route path={ROUTES.CARGO_NEW} element={
+                  <ProtectedRoute roles={['client', 'admin']}>
+                    <CargoCreatePage />
+                  </ProtectedRoute>
+                } />
+                <Route path={ROUTES.CARGO_AI_ORDER} element={
+                  <ProtectedRoute roles={['client', 'admin']}>
+                    <AIOrderPage />
+                  </ProtectedRoute>
+                } />
                 <Route path="/cargo/:id" element={<CargoDetailPage />} />
                 <Route path={ROUTES.SHIPS} element={<ShipListPage />} />
                 <Route path={ROUTES.SHIP_NEW} element={
@@ -179,7 +187,11 @@ export default function App() {
                     <PaymentsPage />
                   </ProtectedRoute>
                 } />
-                <Route path={ROUTES.ANALYTICS} element={<AnalyticsPage />} />
+                <Route path={ROUTES.ANALYTICS} element={
+                  <ProtectedRoute roles={['admin', 'super_admin', 'governance', 'port_manager', 'parking_manager']}>
+                    <AnalyticsPage />
+                  </ProtectedRoute>
+                } />
                 <Route path={ROUTES.MAP} element={<MapPage />} />
                 <Route path={ROUTES.WEATHER} element={
                   <ProtectedRoute roles={['admin', 'parking_manager', 'captain', 'port_manager', 'governance', 'super_admin']}>

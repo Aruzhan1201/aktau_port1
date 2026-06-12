@@ -16,7 +16,7 @@ export function QueuePage() {
     { key: 'type', header: 'Type', render: (q: PortQueueItem) => q.cargo_type || '—' },
     { key: 'weight', header: 'Weight', render: (q: PortQueueItem) => q.weight ? <span className="text-slate-600">{q.weight}t</span> : '—' },
     { key: 'priority', header: 'Priority', render: (q: PortQueueItem) => {
-      const p = q.priority_score
+      const p = q.priority_score ?? 0
       const color = p >= 8 ? 'text-red-600' : p >= 5 ? 'text-amber-600' : 'text-slate-600'
       return <span className={`font-semibold ${color}`}>{p.toFixed(1)}</span>
     }},

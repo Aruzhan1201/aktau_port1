@@ -61,7 +61,7 @@ export function BerthDetailPage() {
           <InfoRow icon={User} label="Manager" value={berth.manager_id?.toString() || '—'} />
           <InfoRow icon={MapPin} label="Location" value={
             berth.location_coords
-              ? `${berth.location_coords.latitude.toFixed(4)}, ${berth.location_coords.longitude.toFixed(4)}`
+              ? `${berth.location_coords.lat.toFixed(4)}, ${berth.location_coords.lng.toFixed(4)}`
               : '—'
           } />
         </div>

@@ -5,10 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.cargo import Cargo, CargoStatus
 from app.models.cargo_status_log import CargoStatusLog
-from app.models.notification import Notification, NotificationType
+from app.models.notification import NotificationType
 from app.models.port_queue import PortQueue, QueueStatus
 from app.models.ship import Ship, ShipStatus
 
+from app.services.notification_service import create_notification
 from app.services.payment_service import are_cargo_payments_paid
 
 
@@ -231,15 +232,15 @@ async def _handle_status_side_effects(
     }
     if new_status in notification_map:
         title, msg = notification_map[new_status]
-        notif = Notification(
+        await create_notification(
+            session,
             user_id=cargo.client_id,
             title=title,
             message=msg,
-            type=NotificationType.cargo_update,
+            notification_type=NotificationType.cargo_update,
             related_entity_type="cargo",
             related_entity_id=cargo.id,
         )
-        session.add(notif)
 
 
 async def assign_ship_to_cargo(

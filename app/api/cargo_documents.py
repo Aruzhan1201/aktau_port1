@@ -81,7 +81,7 @@ async def verify_document(
     document_id: int,
     body: DocumentVerifyRequest,
     session: AsyncSession = Depends(get_session),
-    current_user: User = Depends(RoleChecker(UserRole.admin, UserRole.parking_manager, UserRole.governance)),
+    current_user: User = Depends(RoleChecker(UserRole.admin, UserRole.super_admin, UserRole.parking_manager, UserRole.governance)),
 ):
     doc = await cargo_document_service.verify_document(
         session=session,

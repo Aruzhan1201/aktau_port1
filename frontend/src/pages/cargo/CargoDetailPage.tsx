@@ -77,7 +77,7 @@ export function CargoDetailPage() {
     { label: 'Origin', value: cargo.origin, icon: MapPin },
     { label: 'Destination', value: cargo.destination, icon: MapPin },
     { label: 'ETA', value: cargo.eta ? formatDate(cargo.eta) : '—', icon: Calendar },
-    { label: 'Priority', value: cargo.priority_score.toFixed(1), icon: Shuffle },
+    { label: 'Priority', value: (cargo.priority_score ?? 0).toFixed(1), icon: Shuffle },
     { label: 'Flagged', value: cargo.is_flagged ? 'Yes' : 'No', icon: Flag },
     ...(cargo.ai_generated ? [{ label: 'AI Confidence', value: `${((cargo.ai_confidence ?? 0) * 100).toFixed(0)}%`, icon: SparklesIcon }] : []),
   ]
@@ -98,7 +98,7 @@ export function CargoDetailPage() {
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 <span className="font-medium text-slate-700">{doc.document_type.replace('_', ' ')}</span>
-                <span className="text-slate-400 truncate">{doc.file_url.split('/').pop()}</span>
+                <span className="text-slate-400 truncate">{doc.file_url?.split('/').pop() ?? '—'}</span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <VerificationBadge status={doc.verification_status} />

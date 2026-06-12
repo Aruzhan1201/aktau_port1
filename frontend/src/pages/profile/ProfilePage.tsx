@@ -19,7 +19,7 @@ export function ProfilePage() {
   const fields = [
     { label: 'Name', value: user.name, icon: User },
     { label: 'Email', value: user.email, icon: Mail },
-    { label: 'Role', value: user.role.replace('_', ' '), icon: ShieldCheck },
+    { label: 'Role', value: (user.role ?? '').replace('_', ' '), icon: ShieldCheck },
     { label: 'Status', value: user.is_active ? 'Active' : 'Inactive', icon: user.is_active ? CheckCircle2 : XCircle },
     { label: 'Joined', value: formatDate(user.created_at), icon: Calendar },
   ]
@@ -30,10 +30,10 @@ export function ProfilePage() {
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-4 mb-6 pb-4 border-b border-slate-100">
           <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-lg font-bold text-white">
-            {user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
+            {(user.name ?? '').split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || '??'}
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">{user.name}</h2>
+            <h2 className="text-lg font-semibold text-slate-900">{user.name || 'Unknown'}</h2>
             <p className="text-sm text-slate-500">{user.email}</p>
           </div>
         </div>

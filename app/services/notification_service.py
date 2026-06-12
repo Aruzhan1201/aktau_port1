@@ -2,6 +2,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.notification import Notification, NotificationType
+from app.models.user import User
 
 
 async def create_notification(
@@ -23,6 +24,15 @@ async def create_notification(
     )
     session.add(notif)
     await session.flush()
+
+    from app.telegram.bot import send_telegram_notification
+
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if user and user.telegram_chat_id:
+        tg_text = f"*{title}*\n\n{message}"
+        await send_telegram_notification(user.telegram_chat_id, tg_text)
+
     return notif
 
 

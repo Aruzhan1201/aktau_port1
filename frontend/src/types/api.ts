@@ -27,6 +27,13 @@ export interface CargoCreateRequest {
   origin: string
   destination: string
   eta?: string
+  sender_name?: string
+  sender_phone?: string
+  receiver_name?: string
+  receiver_phone?: string
+  route_waypoints?: { lat: number; lng: number }[]
+  vehicle_type?: string
+  budget?: number
 }
 
 export interface CargoUpdateRequest {
@@ -35,6 +42,13 @@ export interface CargoUpdateRequest {
   origin?: string
   destination?: string
   eta?: string
+  sender_name?: string
+  sender_phone?: string
+  receiver_name?: string
+  receiver_phone?: string
+  route_waypoints?: { lat: number; lng: number }[]
+  vehicle_type?: string
+  budget?: number
 }
 
 export interface CargoStatusUpdateRequest {
@@ -204,22 +218,6 @@ export interface BerthMapResponse {
   status: string
   capacity: number
   current_ship_name?: string
-}
-
-export interface CaptainBookingRequest {
-  berthId: number
-  shipId: number
-  arrivalTime: string
-  departureTime?: string
-  tariffPlan: 'standard' | 'premium' | 'economy'
-}
-
-export interface TariffPlan {
-  id: string
-  name: string
-  description: string
-  pricePerHour: number
-  features: string[]
 }
 
 export interface RouteResponse {

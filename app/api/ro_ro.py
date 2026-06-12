@@ -89,6 +89,6 @@ async def get_kpis(
 async def get_analytics(
     port: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
-    _: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin, UserRole.super_admin)),
+    _: User = Depends(RoleChecker(UserRole.parking_manager, UserRole.admin, UserRole.super_admin, UserRole.governance)),
 ):
     return await ro_ro_service.get_analytics(session, port)

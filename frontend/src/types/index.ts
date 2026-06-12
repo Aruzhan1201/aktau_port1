@@ -1,11 +1,11 @@
-export type { UserRole, CargoStatus, ShipStatus, BerthStatus, ReservationStatus, QueueStatus, PaymentType, PaymentStatus, DocumentType, VerificationStatus, NotificationType, DealStatus, DealType } from './enums'
+export type { UserRole, CargoStatus, ShipStatus, BerthStatus, ReservationStatus, QueueStatus, PaymentType, PaymentStatus, DocumentType, VerificationStatus, NotificationType, DealStatus, DealType, VehicleType } from './enums'
 export type {
   User, Company, Cargo, Ship, Berth, BerthReservation,
   CargoDocument, CargoStatusLog, Assignment, PortQueueItem,
   Payment, Notification, ChatMessage, Deal,
   WeatherRecord, IncidentReport, RoRoVehicle,
   PortConfig, TransitRoute, GovDashboard,
-  ParkingZone, ParkingSpot,
+  ParkingZone, ParkingSpot, TariffPlan,
 } from './models'
 export type {
   TokenResponse, RegisterRequest, LoginRequest,
@@ -19,7 +19,6 @@ export type {
   PaginatedResponse, RevenueResponse, DashboardResponse,
   WaitingTimeReport, ShipUtilizationReport,
   ShipMapResponse, BerthMapResponse, RouteResponse,
-  TariffPlan,
   ParkingZoneCreateRequest, ParkingZoneUpdateRequest, ParkingSpotAssignRequest,
   DealCreateRequest, DealUpdateRequest,
   TrafficOverview,

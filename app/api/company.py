@@ -8,7 +8,7 @@ from app.schemas.company import CompanyCreate, CompanyResponse, CompanyUpdate
 from app.services import company_service
 
 router = APIRouter(prefix="/company", tags=["Companies"])
-admin_only = RoleChecker(UserRole.admin)
+admin_only = RoleChecker(UserRole.admin, UserRole.super_admin)
 
 
 @router.post("/create", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)

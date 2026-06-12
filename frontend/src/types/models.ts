@@ -27,18 +27,26 @@ export interface Cargo {
   company_id?: number | null
   ship_id?: number | null
   driver_id?: number | null
+  sender_name?: string | null
+  sender_phone?: string | null
+  receiver_name?: string | null
+  receiver_phone?: string | null
   cargo_type: string
   weight: number
   origin: string
   destination: string
+  vehicle_type?: string | null
+  budget?: number | null
+  route_waypoints?: { lat: number; lng: number }[] | null
   status: CargoStatus
   eta?: string | null
   priority_score: number
   is_flagged: boolean
   flag_reason?: string | null
+  captain_approved?: boolean
+  client_approved?: boolean
   ai_generated: boolean
   ai_confidence?: number | null
-  route_waypoints?: { lat: number; lng: number }[] | null
   created_at: string
   updated_at: string
 }

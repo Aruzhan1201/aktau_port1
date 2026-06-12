@@ -76,7 +76,7 @@ async def update_ship(
     ship_id: int,
     body: ShipUpdate,
     session: AsyncSession = Depends(get_session),
-    _: User = Depends(RoleChecker(UserRole.admin)),
+    _: User = Depends(RoleChecker(UserRole.admin, UserRole.super_admin)),
 ):
     updated = await ship_service.update_ship(session, ship_id, body.model_dump(exclude_unset=True))
     if not updated:
@@ -88,7 +88,7 @@ async def update_ship(
 async def delete_ship(
     ship_id: int,
     session: AsyncSession = Depends(get_session),
-    _: User = Depends(RoleChecker(UserRole.admin)),
+    _: User = Depends(RoleChecker(UserRole.admin, UserRole.super_admin)),
 ):
     deleted = await ship_service.delete_ship(session, ship_id)
     if not deleted:

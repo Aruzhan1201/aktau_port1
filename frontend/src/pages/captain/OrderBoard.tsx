@@ -11,7 +11,7 @@ import { useShipList } from '@/hooks/useShip'
 import { formatDate, formatWeight } from '@/lib/utils'
 import { CheckCircle, HandshakeIcon, Map, Package, XCircle } from 'lucide-react'
 import type { Cargo, DealCreateRequest } from '@/types'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 export function OrderBoard() {
   const user = useAuthStore((s) => s.user)

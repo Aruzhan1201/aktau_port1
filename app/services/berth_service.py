@@ -5,9 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.berth import Berth, BerthStatus
 from app.models.berth_reservation import BerthReservation, ReservationStatus
-from app.models.notification import Notification, NotificationType
+from app.models.notification import NotificationType
 from app.models.ship import Ship
 
+from app.services.notification_service import create_notification
 from app.services.payment_service import are_reservation_payments_paid
 
 
@@ -151,15 +152,15 @@ async def reserve_berth(
     berth.status = BerthStatus.occupied
 
     if reserved_by:
-        notif = Notification(
+        await create_notification(
+            session,
             user_id=berth.manager_id if berth.manager_id else reserved_by,
             title="Berth Reserved",
             message=f"Berth {berth.name} reserved for ship {ship.name}.",
-            type=NotificationType.berth_update,
+            notification_type=NotificationType.berth_update,
             related_entity_type="berth",
             related_entity_id=berth_id,
         )
-        session.add(notif)
 
     await session.flush()
     return reservation
