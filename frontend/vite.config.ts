@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://aktau-port1.onrender.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ''),
       },

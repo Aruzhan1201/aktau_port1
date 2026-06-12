@@ -1,7 +1,5 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://aktau-port1.onrender.com'
-let _wsUrl = import.meta.env.VITE_WS_BASE_URL || 'wss://aktau-port1.onrender.com'
-_wsUrl = _wsUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:')
-export const WS_BASE_URL = _wsUrl
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+export const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000'
 
 export const PASSWORD_MIN_LENGTH = 8
 export const MAX_UPLOAD_SIZE_MB = 10

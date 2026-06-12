@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
-const BASE = 'https://aktau-port1.onrender.com'
+const BASE = 'http://localhost:8000'
 
 export const handlers = [
   http.get(`${BASE}/auth/me`, () => HttpResponse.json({ id: 1, email: 'admin@test.com', role: 'admin', name: 'Admin', is_active: true, created_at: '2026-01-01T00:00:00Z' })),
