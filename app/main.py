@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import engine, Base
+from app import models
 
 from app.api import (
     auth,
@@ -66,9 +67,27 @@ async def _migrate_payments(conn):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s", settings.APP_NAME)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        await _migrate_payments(conn)
+    try:
+        async with engine.begin() as conn:
+            tables_before = await conn.run_sync(
+                lambda sync_conn: [t for t in Base.metadata.tables.keys()]
+            )
+            logger.info("Models in metadata: %s", tables_before)
+
+            await conn.run_sync(Base.metadata.create_all)
+            await _migrate_payments(conn)
+
+            from sqlalchemy import inspect as sa_inspect
+            inspector = await conn.run_sync(sa_inspect)
+            tables_after = inspector.get_table_names()
+            logger.info("Tables in database after create_all: %s", tables_after)
+
+            for tbl in ("berth_reservations", "users", "berths"):
+                if tbl not in tables_after:
+                    logger.error("CRITICAL: table '%s' was NOT created!", tbl)
+    except Exception as e:
+        logger.exception("Database table creation failed: %s", e)
+        raise
     logger.info("Database tables synced")
 
     try:
