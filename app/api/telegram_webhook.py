@@ -61,7 +61,7 @@ async def _safe_send(chat_id: int, text: str, buttons: list[list[dict]] | None =
         from app.telegram.bot import _bot
 
         if not _bot:
-            logger.warning("Telegram bot not configured, cannot reply to %s", chat_id)
+            logger.warning("Telegram bot not configured")
             return
 
         reply_markup = None
@@ -85,9 +85,8 @@ async def _safe_send(chat_id: int, text: str, buttons: list[list[dict]] | None =
             parse_mode="Markdown",
             reply_markup=reply_markup,
         )
-        logger.info("Replied to chat %s: %.60s", chat_id, text.replace("\n", " "))
     except Exception as e:
-        logger.warning("Telegram send_message failed for chat %s: %s", chat_id, e)
+        logger.warning("Telegram send_message failed: %s", e)
 
 
 def _main_menu_buttons():
@@ -103,29 +102,33 @@ def _main_menu_buttons():
     ]
 
 
-async def handle_telegram_update(body: dict, session: AsyncSession):
-    logger.debug("handle_telegram_update called, body keys: %s", list(body.keys()))
+@router.post("/webhook")
+async def telegram_webhook(request: Request, session: AsyncSession = Depends(get_session)):
+    if not settings.TELEGRAM_BOT_TOKEN:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Telegram not configured")
+
+    body = await request.json()
 
     callback_query = body.get("callback_query")
     if callback_query:
         chat_id = callback_query.get("message", {}).get("chat", {}).get("id")
         cb_data = callback_query.get("data", "")
         await _handle_callback(chat_id, cb_data, session)
-        return
+        return {"ok": True}
 
     message = body.get("message", {})
     chat_id = message.get("chat", {}).get("id")
     text = (message.get("text") or "").strip()
 
     if not chat_id:
-        return
+        return {"ok": True}
 
     if not text:
         await _safe_send(
             chat_id,
             "\U0001f916 I can only process text messages for now. Use /help to see what I can do!",
         )
-        return
+        return {"ok": True}
 
     logger.info("Telegram message from chat %s: %s", chat_id, text[:100])
 
@@ -146,14 +149,6 @@ async def handle_telegram_update(body: dict, session: AsyncSession):
     else:
         await _handle_fallback(chat_id, text, session)
 
-
-@router.post("/webhook")
-async def telegram_webhook(request: Request, session: AsyncSession = Depends(get_session)):
-    if not settings.TELEGRAM_BOT_TOKEN:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Telegram not configured")
-
-    body = await request.json()
-    await handle_telegram_update(body, session)
     return {"ok": True}
 
 
