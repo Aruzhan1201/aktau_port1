@@ -82,8 +82,9 @@ async def lifespan(app: FastAPI):
             await _migrate_payments(conn)
 
             from sqlalchemy import inspect as sa_inspect
-            inspector = await conn.run_sync(sa_inspect)
-            tables_after = inspector.get_table_names()
+            tables_after = await conn.run_sync(
+                lambda sc: sa_inspect(sc).get_table_names()
+            )
             logger.info("Tables in database after create_all: %s", tables_after)
 
             for tbl in ("berth_reservations", "users", "berths"):
