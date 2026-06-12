@@ -51,6 +51,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   register: async (data: RegisterRequest) => {
     await authApi.register(data)
+    saveToken(null)
+    set({ token: null, user: null, isAuthenticated: false })
   },
 
   logout: () => {
