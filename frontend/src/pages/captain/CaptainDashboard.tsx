@@ -8,6 +8,10 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { Ship, Package, HandshakeIcon, Anchor, ArrowRight, FileText, PlusCircle, Map } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DocumentUpload } from '@/components/documents/DocumentUpload'
+import { TransitRoutesTable } from '@/components/dashboard/TransitRoutesTable'
+import { ParkingGrid } from '@/components/dashboard/ParkingGrid'
+import { BerthGrid } from '@/components/dashboard/BerthGrid'
+import { RouteChatbot } from '@/components/dashboard/RouteChatbot'
 
 export function CaptainDashboard() {
   const user = useAuthStore((s) => s.user)
@@ -58,7 +62,9 @@ export function CaptainDashboard() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <TransitRoutesTable />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -79,7 +85,7 @@ export function CaptainDashboard() {
                 <div key={c.id} className="flex items-center justify-between text-sm border-b border-slate-100 pb-2 last:border-0">
                   <div className="min-w-0">
                     <p className="font-medium text-slate-800 truncate">{c.cargo_type}</p>
-                    <p className="text-xs text-slate-400">{c.origin} → {c.destination}</p>
+                    <p className="text-xs text-slate-400">{c.origin} &rarr; {c.destination}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Link to={`/map?cargo=${c.id}`} className="text-blue-500 hover:text-blue-700">
@@ -144,7 +150,6 @@ export function CaptainDashboard() {
         </div>
       )}
 
-      {/* Documents section */}
       {myShip && (
         <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -162,7 +167,7 @@ export function CaptainDashboard() {
               <option value="">Select a cargo to upload documents</option>
               {myCargoes.length > 0 ? myCargoes.map((c) => (
                 <option key={c.id} value={c.id}>
-                  #{c.id} {c.cargo_type} — {c.origin} → {c.destination}
+                  #{c.id} {c.cargo_type} &mdash; {c.origin} &rarr; {c.destination}
                 </option>
               )) : (
                 <option disabled>No cargoes assigned to your ship yet</option>
@@ -175,6 +180,14 @@ export function CaptainDashboard() {
           )}
         </div>
       )}
+
+      <div className="mt-6 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ParkingGrid />
+          <BerthGrid />
+        </div>
+        <RouteChatbot />
+      </div>
     </div>
   )
 }

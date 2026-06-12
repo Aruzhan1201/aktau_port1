@@ -33,6 +33,7 @@ from app.api import (
     parking,
     deals,
     governance,
+    route_planner,
 )
 from app.websocket.routes import router as ws_router
 
@@ -145,6 +146,7 @@ app.include_router(gov_analytics.router)
 app.include_router(parking.router)
 app.include_router(deals.router)
 app.include_router(governance.router)
+app.include_router(route_planner.router)
 app.include_router(ws_router)
 
 

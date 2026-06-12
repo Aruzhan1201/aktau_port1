@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { Notification, CargoDocument, CargoDocumentVerifyRequest, ShipMapResponse, BerthMapResponse, RouteResponse } from '@/types'
+import type { Notification, CargoDocument, CargoDocumentVerifyRequest, ShipMapResponse, BerthMapResponse, RouteResponse, TransitRoute } from '@/types'
 
 export const notificationApi = {
   list: (params?: Record<string, unknown>) =>
@@ -32,7 +32,7 @@ export const mapApi = {
   portBerths: (port: string) =>
     apiClient.get(`/maps/${port}/berths`),
   portRoutes: (port: string) =>
-    apiClient.get(`/maps/${port}/routes`),
+    apiClient.get<TransitRoute[]>(`/maps/${port}/routes`),
   portConfig: (port: string) =>
     apiClient.get(`/maps/${port}/config`),
 }

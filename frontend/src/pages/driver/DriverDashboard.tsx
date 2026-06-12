@@ -1,39 +1,17 @@
-import { useMemo, useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
 import { useCargoList } from '@/hooks/useCargo'
-import { useShipList } from '@/hooks/useShip'
-import { api } from '@/api/client'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Package, Map, ArrowRight, ParkingCircle, CheckCircle2 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import type { ParkingSpot } from '@/types'
+import { Package, Map, ArrowRight, Ship } from 'lucide-react'
+import { TransitRoutesTable } from '@/components/dashboard/TransitRoutesTable'
+import { ParkingGrid } from '@/components/dashboard/ParkingGrid'
+import { BerthGrid } from '@/components/dashboard/BerthGrid'
+import { RouteChatbot } from '@/components/dashboard/RouteChatbot'
 
 export function DriverDashboard() {
   const user = useAuthStore((s) => s.user)
-  const queryClient = useQueryClient()
   const { data: cargoes } = useCargoList({ driver_id: user?.id })
-  const { data: ships } = useShipList()
-  const [parkingSuccess, setParkingSuccess] = useState(false)
-  const [parkingError, setParkingError] = useState('')
-
-  const { data: spotsData } = useQuery({
-    queryKey: ['parking-spots-driver'],
-    queryFn: () => api.get('/parking/spots').then((r) => r.data),
-  })
-
-  const freeSpots: ParkingSpot[] = spotsData?.items?.filter((s: ParkingSpot) => s.status === 'free') ?? []
-  const mySpot: ParkingSpot | undefined = spotsData?.items?.find((s: ParkingSpot) => s.driver_id === user?.id)
-
-  const requestSpot = useMutation({
-    mutationFn: (spotId: number) => api.post(`/parking/spots/${spotId}/assign`, {
-      driver_id: user?.id,
-    }),
-    onSuccess: () => { setParkingSuccess(true); setParkingError('') },
-    onError: (err: any) => setParkingError(err?.response?.data?.detail || err?.message || 'Failed to book parking'),
-  })
 
   const myCargoes = cargoes?.items ?? []
   const activeCargoes = myCargoes.filter((c) =>
@@ -68,7 +46,7 @@ export function DriverDashboard() {
                     #{c.id} {c.cargo_type}
                   </p>
                   <p className="text-xs text-slate-400">
-                    {c.origin} → {c.destination}
+                    {c.origin} &rarr; {c.destination}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 ml-4">
@@ -110,57 +88,17 @@ export function DriverDashboard() {
         </div>
       )}
 
-      {/* Parking Section */}
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <ParkingCircle className="w-4 h-4 text-slate-400" />
-          <h3 className="text-sm font-semibold text-slate-700">Parking</h3>
+      <div className="mt-6 space-y-6">
+        <TransitRoutesTable />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ParkingGrid />
+          <BerthGrid />
         </div>
-        {mySpot ? (
-          <p className="text-sm text-emerald-600 font-medium">
-            <CheckCircle2 className="w-4 h-4 inline mr-1" />
-            You are assigned to spot {mySpot.spot_number}
-          </p>
-        ) : parkingSuccess ? (
-          <div>
-            <p className="text-sm text-emerald-600 font-medium mb-2">
-              <CheckCircle2 className="w-4 h-4 inline mr-1" />
-              Spot assigned! You can now park.
-            </p>
-            <Button variant="outline" size="sm" onClick={() => { setParkingSuccess(false); queryClient.invalidateQueries({ queryKey: ['parking-spots-driver'] }) }}>
-              Refresh
-            </Button>
-          </div>
-        ) : (
-          <div>
-            {parkingError && (
-              <p className="text-sm text-red-600 mb-2 bg-red-50 rounded-lg px-3 py-2 border border-red-200">
-                {parkingError}
-              </p>
-            )}
-            <p className="text-sm text-slate-500 mb-3">{freeSpots.length} free spots available</p>
-            <div className="flex flex-wrap gap-2">
-              {freeSpots.slice(0, 10).map((spot) => (
-                <button
-                  key={spot.id}
-                  onClick={() => requestSpot.mutate(spot.id)}
-                  disabled={requestSpot.isPending}
-                  className="px-3 py-1.5 text-xs bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
-                >
-                  Spot {spot.spot_number}
-                </button>
-              ))}
-              {freeSpots.length > 10 && (
-                <Link to="/parking/spots">
-                  <Button variant="ghost" size="sm">View All</Button>
-                </Link>
-              )}
-            </div>
-            {freeSpots.length === 0 && (
-              <p className="text-xs text-slate-400">No free spots available.</p>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-2 mb-2">
+          <Ship className="w-4 h-4 text-slate-400" />
+          <h3 className="text-sm font-semibold text-slate-700">Route Planning</h3>
+        </div>
+        <RouteChatbot />
       </div>
     </div>
   )
