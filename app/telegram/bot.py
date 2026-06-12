@@ -38,22 +38,44 @@ async def send_telegram_notification(chat_id: str, message: str) -> bool:
 async def _poll_updates():
     if not _bot or not _bot_available:
         return
+    try:
+        from app.api.telegram_webhook import handle_telegram_update
+    except ImportError as e:
+        logger.error("Cannot import handle_telegram_update: %s", e)
+        return
+    from app.core.database import async_session_factory
+
+    logger.info("Polling loop started — waiting for updates...")
     offset = 0
     while True:
         try:
             updates = await _bot.get_updates(offset=offset, timeout=30, allowed_updates=["message", "callback_query"])
             for update in updates:
                 offset = update.update_id + 1
-                if update.message or update.callback_query:
-                    logger.debug("Polled update %s from chat %s", update.update_id,
-                                 update.message.chat.id if update.message else
-                                 update.callback_query.message.chat.id)
+                if not (update.message or update.callback_query):
+                    continue
+                logger.info("Got update %s: message=%s callback=%s",
+                            update.update_id,
+                            bool(update.message),
+                            bool(update.callback_query))
+                try:
+                    async with async_session_factory() as poll_session:
+                        update_dict = update.to_dict() if hasattr(update, 'to_dict') else {}
+                        logger.debug("Update dict keys: %s", list(update_dict.keys()))
+                        if update.message:
+                            logger.debug("Message keys: %s", list(update_dict.get("message", {}).keys()))
+                        await handle_telegram_update(update_dict, poll_session)
+                        await poll_session.commit()
+                        logger.info("Update %s processed successfully", update.update_id)
+                except Exception as e:
+                    logger.error("Failed to process update %s: %s", update.update_id, e, exc_info=True)
         except _TelegramError as e:
-            logger.warning("Telegram polling error: %s", e)
+            logger.warning("Telegram polling error (will retry): %s", e)
         except asyncio.CancelledError:
+            logger.info("Polling cancelled")
             break
         except Exception as e:
-            logger.warning("Telegram polling unexpected error: %s", e)
+            logger.warning("Telegram polling unexpected error (will retry): %s", e)
         await asyncio.sleep(1)
 
 
@@ -63,10 +85,12 @@ def start_polling():
         logger.info("Telegram polling already running")
         return
     if not _bot or not _bot_available:
-        logger.warning("Telegram bot not configured, cannot start polling")
+        logger.warning("Telegram bot not configured — TELEGRAM_BOT_TOKEN is%s set",
+                       "" if settings.TELEGRAM_BOT_TOKEN else " NOT")
         return
+    token_preview = settings.TELEGRAM_BOT_TOKEN[:8] + "..." if len(settings.TELEGRAM_BOT_TOKEN) > 8 else "INVALID"
+    logger.info("Telegram polling started with token %s", token_preview)
     _polling_task = asyncio.create_task(_poll_updates())
-    logger.info("Telegram polling started in background")
 
 
 def stop_polling():
